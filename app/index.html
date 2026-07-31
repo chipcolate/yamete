@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spank</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <!-- The window has no title bar, so this doubles as the drag handle. -->
+    <header data-tauri-drag-region>
+      <h1 data-tauri-drag-region>Spank</h1>
+      <div class="status">
+        <span id="conn" class="dot" title="daemon connection"></span>
+        <span id="status-text">connecting…</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="scope-wrap">
+          <canvas id="scope"></canvas>
+          <div id="scope-empty" class="scope-empty">waiting for the daemon…</div>
+        </div>
+        <div class="legend">
+          <span><i class="swatch accel"></i>acceleration</span>
+          <span><i class="swatch gyro"></i>rotation</span>
+          <span id="last-slap" class="last-slap"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <label class="row" for="sensitivity">
+          <span>Sensitivity</span>
+          <output id="sensitivity-out">0.50</output>
+        </label>
+        <input id="sensitivity" type="range" min="0" max="1" step="0.01" value="0.5" />
+        <p class="hint" id="sensitivity-hint">
+          Higher catches gentler taps and more desk bumps.
+        </p>
+
+        <label class="row" for="delay">
+          <span>Response delay</span>
+          <output id="delay-out">200 ms</output>
+        </label>
+        <input id="delay" type="range" min="0" max="600" step="10" value="200" />
+        <p class="hint">
+          Detection beats the sound of the slap itself; a short delay lets the impact
+          finish first.
+        </p>
+
+        <label class="row" for="cooldown">
+          <span>Cooldown</span>
+          <output id="cooldown-out">0.75 s</output>
+        </label>
+        <input id="cooldown" type="range" min="0.1" max="3" step="0.05" value="0.75" />
+
+        <label class="row checkbox">
+          <input id="scale-volume" type="checkbox" />
+          <span>Vary volume with force</span>
+        </label>
+        <p class="hint" id="scale-hint">
+          Off: sounds play at your system volume.
+        </p>
+        <div id="range-wrap" hidden>
+          <label class="row" for="volume-range">
+            <span>Volume swing</span>
+            <output id="volume-range-out">± 40%</output>
+          </label>
+          <input id="volume-range" type="range" min="0" max="100" step="5" value="40" />
+        </div>
+
+        <label class="row checkbox">
+          <input id="lowpower" type="checkbox" />
+          <span>Low power mode <em>(402 Hz, about half the CPU)</em></span>
+        </label>
+      </section>
+
+      <section class="panel">
+        <div class="row"><span class="section-title">Actions</span></div>
+        <div id="actions"></div>
+      </section>
+
+      <section class="panel meta">
+        <div id="daemon-meta"></div>
+        <div class="buttons">
+          <button id="toggle">Pause detection</button>
+          <button id="logs" class="secondary">Show logs</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

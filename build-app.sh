@@ -18,6 +18,14 @@ cp target/release/spankd "app/src-tauri/binaries/spankd-$TRIPLE"
 # Anything Tauri copied next to a previous build would shadow the fresh one.
 rm -f app/src-tauri/target/release/spankd app/src-tauri/target/debug/spankd
 
+# bundle_dmg.sh fails outright if a volume of the same name is already attached, which
+# happens routinely after installing from a previous build.
+if [ -d /Volumes/Spank ]; then
+  echo "==> detaching a mounted Spank volume"
+  hdiutil detach /Volumes/Spank -force >/dev/null 2>&1 || true
+  sleep 1
+fi
+
 echo "==> app"
 (cd app && bun run tauri build)
 

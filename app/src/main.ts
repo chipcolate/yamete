@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import { Scope } from "./scope";
 import type { Action, DaemonConfig, Slap, Status, Telemetry } from "./types";
@@ -125,8 +126,60 @@ function renderActions(actions: Action[]) {
       }
     });
 
-    row.append(on, name, kind, test);
+    row.append(on, name, kind);
+
+    // Sounds are the one action kind with a file to choose; exec and webhook are edited
+    // in the config file for now.
+    if (action.kind.type === "sound") {
+      const choose = document.createElement("button");
+      choose.textContent = "Choose…";
+      choose.addEventListener("click", () => void pickSound(action));
+      row.append(choose);
+    }
+
+    row.append(test);
     host.append(row);
+  }
+}
+
+/** Formats the decoder understands. Anything outside this list would fail to load. */
+const AUDIO_EXTENSIONS = [
+  "wav",
+  "mp3",
+  "ogg",
+  "flac",
+  "aiff",
+  "aif",
+  "aifc",
+  "caf",
+  "m4a",
+  "aac",
+];
+
+async function pickSound(action: Action) {
+  if (action.kind.type !== "sound") return;
+  try {
+    const picked = await openDialog({
+      multiple: false,
+      directory: false,
+      title: "Choose a sound",
+      filters: [{ name: "Audio", extensions: AUDIO_EXTENSIONS }],
+    });
+    if (typeof picked !== "string") return; // cancelled
+
+    action.kind.path = picked;
+    pushConfig();
+    render();
+
+    // Play it straight away. The daemon decodes on config change, so a file it cannot
+    // read shows up here as silence rather than as an error in a log nobody reads.
+    setTimeout(() => {
+      invoke("test_action", { id: action.id, intensity: 0.85 }).catch((e) =>
+        toast(String(e)),
+      );
+    }, 400);
+  } catch (e) {
+    toast(String(e));
   }
 }
 

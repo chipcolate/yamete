@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["crates/spank-sensor", "crates/spank-dsp", "crates/spank-proto", "crates/spankd"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77.2"
+license = "MIT"
+repository = "https://github.com/chipcolate/mac-spank"
+
+[workspace.dependencies]
+spank-sensor = { path = "crates/spank-sensor" }
+spank-dsp = { path = "crates/spank-dsp" }
+spank-proto = { path = "crates/spank-proto" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

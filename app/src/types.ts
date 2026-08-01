@@ -86,7 +86,8 @@ export interface DetectorConfig {
 export type ActionKind =
   | {
       type: "sound";
-      path: string;
+      paths: string[];
+      order: "sequential" | "random";
       volume_db: number;
       scale_with_intensity: boolean;
       intensity_range_pct: number;

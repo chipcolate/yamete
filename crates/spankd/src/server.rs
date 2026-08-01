@@ -198,7 +198,8 @@ fn handle_request(request: Request, shared: &Shared, sub: &mut Subscription) -> 
 
         Request::GetStatus => Some(Event::Status(shared.status.borrow().clone())),
 
-        Request::SetConfig { config } => {
+        Request::SetConfig { mut config } => {
+            config.normalize();
             if let Err(problem) = config.validate() {
                 return Some(Event::Error {
                     message: format!("rejected: {problem}"),

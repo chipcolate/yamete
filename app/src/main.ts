@@ -272,7 +272,10 @@ function renderActionPages() {
   // Sound
   const sound = actions.ensure(config, "sound");
   if (sound.kind.type === "sound") {
-    $("sound-path").textContent = sound.kind.path || "—";
+    renderSoundList(sound.kind.paths);
+    // With one sound there is nothing to order, so the choice is noise.
+    $("order-wrap").hidden = sound.kind.paths.length < 2;
+    $<HTMLSelectElement>("sound-order").value = sound.kind.order;
     $<HTMLInputElement>("scale-volume").checked = sound.kind.scale_with_intensity;
     $<HTMLInputElement>("volume-range").value = String(sound.kind.intensity_range_pct);
     $("volume-range-out").textContent = `± ${sound.kind.intensity_range_pct.toFixed(0)}%`;
@@ -306,6 +309,44 @@ function renderActionPages() {
     renderCommon(id);
   }
   renderNav();
+}
+
+function renderSoundList(paths: string[]) {
+  const host = $("sound-list");
+  host.replaceChildren();
+
+  if (paths.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "No sounds yet — add one.";
+    host.append(li);
+    return;
+  }
+
+  paths.forEach((path, index) => {
+    const li = document.createElement("li");
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = path;
+    name.title = path;
+
+    const drop = document.createElement("button");
+    drop.className = "drop";
+    drop.textContent = "×";
+    drop.title = "Remove";
+    drop.addEventListener("click", () => {
+      if (!config) return;
+      const action = actions.ensure(config, "sound");
+      if (action.kind.type !== "sound") return;
+      action.kind.paths.splice(index, 1);
+      pushConfig();
+      renderActionPages();
+    });
+
+    li.append(name, drop);
+    host.append(li);
+  });
 }
 
 /** Render a label/value grid. */
@@ -435,17 +476,40 @@ $("advanced").addEventListener("change", (e) => {
 // Sound
 $("sound-pick").addEventListener("click", async () => {
   if (!config) return;
-  const path = await pick("Choose a sound", [
-    { name: "Audio", extensions: AUDIO_EXTENSIONS },
-  ]).catch(() => null);
-  if (!path) return;
+  const picked = await openDialog({
+    multiple: true,
+    directory: false,
+    title: "Add sounds",
+    filters: [{ name: "Audio", extensions: AUDIO_EXTENSIONS }],
+  }).catch(() => null);
+  if (!picked) return;
+
+  const chosen = Array.isArray(picked) ? picked : [picked];
   const action = actions.ensure(config, "sound");
-  if (action.kind.type === "sound") action.kind.path = path;
-  $("sound-path").textContent = path;
+  if (action.kind.type !== "sound") return;
+
+  const before = action.kind.paths.length;
+  for (const path of chosen) {
+    // Adding the same file twice would give it double the odds under random order, and
+    // is never what was meant.
+    if (!action.kind.paths.includes(path)) action.kind.paths.push(path);
+  }
   pushConfig();
-  // Play it: the daemon logs decode failures somewhere nobody looks, and hearing it is
-  // the confirmation that matters.
-  setTimeout(() => void testAction("sound"), 400);
+  renderActionPages();
+
+  // Play the first new one. The daemon logs decode failures somewhere nobody looks, and
+  // hearing it is the confirmation that matters.
+  if (action.kind.paths.length > before) {
+    setTimeout(() => void testAction("sound"), 400);
+  }
+});
+
+$("sound-order").addEventListener("change", (e) => {
+  if (!config) return;
+  const action = actions.ensure(config, "sound");
+  if (action.kind.type !== "sound") return;
+  action.kind.order = (e.target as HTMLSelectElement).value as "sequential" | "random";
+  pushConfig();
 });
 
 $("sound-test").addEventListener("click", () => void testAction("sound"));

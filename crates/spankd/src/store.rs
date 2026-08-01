@@ -23,13 +23,17 @@ pub fn load(path: &Path) -> (DaemonConfig, Option<String>) {
     };
 
     match serde_json::from_str::<DaemonConfig>(&text) {
-        Ok(config) => match config.validate() {
-            Ok(()) => (config, None),
-            Err(problem) => (
-                DaemonConfig::default(),
-                Some(format!("{} is invalid: {problem}", path.display())),
-            ),
-        },
+        Ok(mut config) => {
+            // Fold any older layout forward before anything else looks at it.
+            config.normalize();
+            match config.validate() {
+                Ok(()) => (config, None),
+                Err(problem) => (
+                    DaemonConfig::default(),
+                    Some(format!("{} is invalid: {problem}", path.display())),
+                ),
+            }
+        }
         Err(e) => (
             DaemonConfig::default(),
             Some(format!("could not parse {}: {e}", path.display())),

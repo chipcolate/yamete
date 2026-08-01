@@ -53,6 +53,22 @@ impl DaemonConfig {
         self.actions.iter().find(|a| a.id == id)
     }
 
+    /// Fold anything left over from an older config layout into the current one.
+    ///
+    /// Called after loading and after any change arrives over the socket, so the rest of
+    /// the code only ever deals with the current shape.
+    pub fn normalize(&mut self) {
+        for action in &mut self.actions {
+            if let ActionKind::Sound { paths, path, .. } = &mut action.kind {
+                if let Some(legacy) = path.take() {
+                    if paths.is_empty() && !legacy.as_os_str().is_empty() {
+                        paths.push(legacy);
+                    }
+                }
+            }
+        }
+    }
+
     /// Reject configurations that would misbehave rather than storing them.
     ///
     /// Config arrives over a socket from a UI, so it is untrusted input in the ordinary
@@ -83,6 +99,17 @@ impl DaemonConfig {
         }
         Ok(())
     }
+}
+
+/// How a sound is chosen when there is more than one to choose from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SoundOrder {
+    /// Step through the list in order, wrapping at the end.
+    #[default]
+    Sequential,
+    /// Pick at random, never the same one twice running.
+    Random,
 }
 
 /// One thing that happens when a slap is detected.
@@ -133,7 +160,9 @@ impl Action {
             id: "sound".into(),
             name: "Play a sound".into(),
             kind: ActionKind::Sound {
-                path: PathBuf::from("/System/Library/Sounds/Sosumi.aiff"),
+                paths: vec![PathBuf::from("/System/Library/Sounds/Sosumi.aiff")],
+                path: None,
+                order: SoundOrder::default(),
                 volume_db: 0.0,
                 scale_with_intensity: false,
                 intensity_range_pct: default_intensity_range(),
@@ -159,7 +188,7 @@ impl Action {
     /// unusable — you cannot type a URL into a field that refuses to save.
     pub fn is_runnable(&self) -> bool {
         match &self.kind {
-            ActionKind::Sound { path, .. } => !path.as_os_str().is_empty(),
+            ActionKind::Sound { paths, .. } => !paths.is_empty(),
             ActionKind::Exec { program, .. } => !program.trim().is_empty(),
             ActionKind::Webhook { url, .. } => !url.trim().is_empty(),
         }
@@ -220,9 +249,20 @@ impl Action {
 pub enum ActionKind {
     /// Play an audio file.
     Sound {
-        /// A file, or a directory to pick a random file from — the equivalent of the
-        /// reference apps' sound "modes", without hardcoding any of them.
-        path: PathBuf,
+        /// The sounds to choose from. Each entry is a file, or a directory whose audio
+        /// files are all included — the equivalent of the reference apps' sound "modes",
+        /// without hardcoding any of them.
+        #[serde(default)]
+        paths: Vec<PathBuf>,
+
+        /// Superseded by `paths`. Still read so a config written by an earlier build
+        /// keeps its sound instead of silently falling back to nothing.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        path: Option<PathBuf>,
+
+        /// Which sound to play when several are configured. Irrelevant with one.
+        #[serde(default)]
+        order: SoundOrder,
         /// Trim in decibels, relative to the file as recorded.
         ///
         /// 0 means "play it as it is" and lets the system volume decide how loud that is,
@@ -285,7 +325,9 @@ pub enum ActionKind {
 impl Default for ActionKind {
     fn default() -> Self {
         ActionKind::Sound {
-            path: PathBuf::from("/System/Library/Sounds/Sosumi.aiff"),
+            paths: vec![PathBuf::from("/System/Library/Sounds/Sosumi.aiff")],
+            path: None,
+            order: SoundOrder::default(),
             volume_db: 0.0,
             scale_with_intensity: false,
             intensity_range_pct: default_intensity_range(),
@@ -420,6 +462,46 @@ mod tests {
     }
 
     #[test]
+    fn a_legacy_single_path_config_keeps_its_sound() {
+        // Written by a build that had `path` rather than `paths`.
+        let text = r#"{"actions":[{"id":"sound","kind":{"type":"sound",
+            "path":"/System/Library/Sounds/Ping.aiff","volume_db":0.0,
+            "scale_with_intensity":false,"playback_rate":1.0}}]}"#;
+        let mut config: DaemonConfig = serde_json::from_str(text).unwrap();
+        config.normalize();
+
+        match &config.action("sound").unwrap().kind {
+            ActionKind::Sound { paths, path, .. } => {
+                assert_eq!(paths.len(), 1, "the old path should have been carried over");
+                assert!(paths[0].ends_with("Ping.aiff"));
+                assert!(path.is_none(), "and cleared, so it is not carried forever");
+            }
+            other => panic!("unexpected kind: {other:?}"),
+        }
+        assert!(config.action("sound").unwrap().is_runnable());
+    }
+
+    #[test]
+    fn normalize_does_not_clobber_a_current_config() {
+        let mut config = DaemonConfig::default();
+        let before = config.clone();
+        config.normalize();
+        assert_eq!(config, before);
+    }
+
+    #[test]
+    fn a_sound_with_no_files_is_valid_but_silent() {
+        let mut config = DaemonConfig::default();
+        if let Some(action) = config.actions.first_mut() {
+            if let ActionKind::Sound { paths, .. } = &mut action.kind {
+                paths.clear();
+            }
+        }
+        assert!(config.validate().is_ok());
+        assert!(!config.actions[0].is_runnable());
+    }
+
+    #[test]
     fn an_unconfigured_action_is_valid_but_does_not_fire() {
         // Switching an action on before filling it in must not make the whole config
         // unsaveable, or the UI cannot let you type a URL at all.
@@ -487,7 +569,9 @@ mod tests {
         let bad_rate = DaemonConfig {
             actions: vec![Action {
                 kind: ActionKind::Sound {
-                    path: "/x.wav".into(),
+                    paths: vec!["/x.wav".into()],
+                    path: None,
+                    order: SoundOrder::default(),
                     volume_db: 0.0,
                     scale_with_intensity: false,
                     intensity_range_pct: 40.0,

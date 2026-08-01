@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 
 use kira::sound::static_sound::StaticSoundData;
 use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
-use spank_proto::{Action, ActionKind, DaemonConfig, Slap};
+use spank_proto::{Action, ActionKind, DaemonConfig, Slap, SoundOrder};
 
 /// How long the audio device stays open after the last sound.
 ///
@@ -66,8 +66,11 @@ pub struct Executor {
     /// Decoded audio, keyed by the path it came from. Decoding an mp3 takes long enough
     /// to be audible if done at trigger time.
     cache: BTreeMap<PathBuf, StaticSoundData>,
-    /// Cheap deterministic sequence for picking from sound directories.
-    rotation: u64,
+    /// Position in the playlist for sequential order.
+    rotation: usize,
+    /// State for random order, plus the last pick so it is never repeated back to back.
+    rng: u64,
+    last_pick: Option<PathBuf>,
 }
 
 impl Executor {
@@ -85,6 +88,14 @@ impl Executor {
             tx,
             cache: BTreeMap::new(),
             rotation: 0,
+            // Seeded from the clock so two runs do not play the same sequence. Any
+            // reasonable spread will do; this is picking sound effects, not keys.
+            rng: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or(0x9E3779B97F4A7C15)
+                | 1,
+            last_pick: None,
         }
     }
 
@@ -95,8 +106,8 @@ impl Executor {
     pub fn preload(&mut self, config: &DaemonConfig) -> Vec<String> {
         let mut wanted: Vec<PathBuf> = Vec::new();
         for action in &config.actions {
-            if let ActionKind::Sound { path, .. } = &action.kind {
-                wanted.extend(resolve_sounds(path));
+            if let ActionKind::Sound { paths, .. } = &action.kind {
+                wanted.extend(playlist(paths));
             }
         }
 
@@ -129,14 +140,16 @@ impl Executor {
     pub fn run(&mut self, action: &Action, slap: &Slap) {
         let job = match &action.kind {
             ActionKind::Sound {
-                path,
+                paths,
+                order,
                 volume_db,
                 scale_with_intensity,
                 intensity_range_pct,
                 playback_rate,
+                ..
             } => {
-                let Some(chosen) = self.pick_sound(path) else {
-                    tracing::warn!(action = %action.id, path = %path.display(), "no sound available");
+                let Some(chosen) = self.pick_sound(paths, *order) else {
+                    tracing::warn!(action = %action.id, "no sound available");
                     return;
                 };
                 let Some(data) = self.cache.get(&chosen) else {
@@ -205,19 +218,48 @@ impl Executor {
         }
     }
 
-    /// Resolve a configured path to a concrete file, rotating through directories.
-    fn pick_sound(&mut self, path: &Path) -> Option<PathBuf> {
-        let candidates = resolve_sounds(path);
+    /// Choose which sound to play.
+    fn pick_sound(&mut self, paths: &[PathBuf], order: SoundOrder) -> Option<PathBuf> {
+        let candidates = playlist(paths);
         match candidates.len() {
             0 => None,
             1 => candidates.into_iter().next(),
             n => {
-                // Rotate rather than picking randomly: consecutive slaps never repeat the
-                // same clip, which is what "random" is actually trying to achieve here.
-                self.rotation = self.rotation.wrapping_add(1);
-                candidates.into_iter().nth(self.rotation as usize % n)
+                let chosen = match order {
+                    SoundOrder::Sequential => {
+                        let at = self.rotation % n;
+                        self.rotation = self.rotation.wrapping_add(1);
+                        candidates.get(at).cloned()
+                    }
+                    SoundOrder::Random => {
+                        // Draw from everything *except* the last pick. Uniform picking
+                        // repeats about 1 slap in n, which people hear as the randomness
+                        // being broken rather than as randomness; rerolling once only
+                        // reduces that rather than removing it.
+                        let pool: Vec<&PathBuf> = candidates
+                            .iter()
+                            .filter(|p| Some(*p) != self.last_pick.as_ref())
+                            .collect();
+                        let pool = if pool.is_empty() {
+                            candidates.iter().collect()
+                        } else {
+                            pool
+                        };
+                        pool.get(self.next_random(pool.len())).map(|p| (*p).clone())
+                    }
+                };
+                self.last_pick = chosen.clone();
+                chosen
             }
         }
+    }
+
+    /// xorshift64*, which is ample for choosing a sound effect and saves a dependency.
+    fn next_random(&mut self, bound: usize) -> usize {
+        self.rng ^= self.rng >> 12;
+        self.rng ^= self.rng << 25;
+        self.rng ^= self.rng >> 27;
+        (self.rng.wrapping_mul(0x2545F4914F6CDD1D) >> 33) as usize % bound.max(1)
     }
 }
 
@@ -227,10 +269,26 @@ impl Default for Executor {
     }
 }
 
-/// Expand a configured sound path into the files it refers to.
+/// Expand the configured list into the files that will actually play.
 ///
-/// A directory becomes every audio file directly inside it, sorted so the rotation order
-/// is stable across restarts.
+/// Entries are kept in the order given, with duplicates removed, so sequential playback
+/// follows the list as displayed.
+fn playlist(paths: &[PathBuf]) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = Vec::new();
+    for entry in paths {
+        for file in resolve_sounds(entry) {
+            if !out.contains(&file) {
+                out.push(file);
+            }
+        }
+    }
+    out
+}
+
+/// Expand one configured entry into the files it refers to.
+///
+/// A directory becomes every audio file directly inside it, sorted so the order is stable
+/// across restarts.
 fn resolve_sounds(path: &Path) -> Vec<PathBuf> {
     if path.is_dir() {
         let Ok(entries) = std::fs::read_dir(path) else {
@@ -566,6 +624,105 @@ mod tests {
         assert!(is_audio(Path::new("/x/a.aiff")));
         assert!(!is_audio(Path::new("/x/a.txt")));
         assert!(!is_audio(Path::new("/x/noextension")));
+    }
+
+    #[test]
+    fn sequential_order_walks_the_list_and_wraps() {
+        let dir = std::env::temp_dir().join(format!("spank-seq-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let files: Vec<PathBuf> = ["a.wav", "b.wav", "c.wav"]
+            .iter()
+            .map(|n| {
+                let p = dir.join(n);
+                std::fs::write(&p, b"x").unwrap();
+                p
+            })
+            .collect();
+
+        let mut ex = Executor {
+            tx: mpsc::channel().0,
+            cache: BTreeMap::new(),
+            rotation: 0,
+            rng: 1,
+            last_pick: None,
+        };
+        let picks: Vec<PathBuf> = (0..4)
+            .filter_map(|_| ex.pick_sound(&files, SoundOrder::Sequential))
+            .collect();
+        assert_eq!(picks, [&files[0], &files[1], &files[2], &files[0]].map(|p| p.clone()));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn random_order_covers_the_list_without_immediate_repeats() {
+        let dir = std::env::temp_dir().join(format!("spank-rand-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let files: Vec<PathBuf> = ["a.wav", "b.wav", "c.wav", "d.wav"]
+            .iter()
+            .map(|n| {
+                let p = dir.join(n);
+                std::fs::write(&p, b"x").unwrap();
+                p
+            })
+            .collect();
+
+        let mut ex = Executor {
+            tx: mpsc::channel().0,
+            cache: BTreeMap::new(),
+            rotation: 0,
+            rng: 0x123456789abcdef,
+            last_pick: None,
+        };
+        let picks: Vec<PathBuf> = (0..200)
+            .filter_map(|_| ex.pick_sound(&files, SoundOrder::Random))
+            .collect();
+
+        // Every sound should come up over 200 draws from four.
+        for f in &files {
+            assert!(picks.contains(f), "{} never played", f.display());
+        }
+        // Hearing the same clip twice running reads as the randomness being broken.
+        let repeats = picks.windows(2).filter(|w| w[0] == w[1]).count();
+        assert_eq!(repeats, 0, "played the same sound twice in a row");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_single_sound_ignores_the_order() {
+        let dir = std::env::temp_dir().join(format!("spank-one-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let only = dir.join("only.wav");
+        std::fs::write(&only, b"x").unwrap();
+
+        for order in [SoundOrder::Sequential, SoundOrder::Random] {
+            let mut ex = Executor {
+                tx: mpsc::channel().0,
+                cache: BTreeMap::new(),
+                rotation: 0,
+                rng: 7,
+                last_pick: None,
+            };
+            for _ in 0..5 {
+                assert_eq!(ex.pick_sound(std::slice::from_ref(&only), order), Some(only.clone()));
+            }
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn the_playlist_flattens_directories_and_drops_duplicates() {
+        let dir = std::env::temp_dir().join(format!("spank-pl-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        for n in ["a.mp3", "b.wav"] {
+            std::fs::write(dir.join(n), b"x").unwrap();
+        }
+        // The directory and one of its files, listed together.
+        let entries = vec![dir.clone(), dir.join("a.mp3")];
+        let flat = playlist(&entries);
+        assert_eq!(flat.len(), 2, "duplicate should have been dropped: {flat:?}");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

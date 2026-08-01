@@ -30,7 +30,8 @@ function defaultKind(id: ActionId): ActionKind {
     case "sound":
       return {
         type: "sound",
-        path: "/System/Library/Sounds/Sosumi.aiff",
+        paths: ["/System/Library/Sounds/Sosumi.aiff"],
+        order: "sequential",
         volume_db: 0,
         scale_with_intensity: false,
         intensity_range_pct: 40,
@@ -92,7 +93,7 @@ export function isEnabled(config: DaemonConfig, id: ActionId): boolean {
 export function incompleteReason(action: Action): string | null {
   switch (action.kind.type) {
     case "sound":
-      return action.kind.path.trim() === "" ? "no file chosen" : null;
+      return action.kind.paths.length === 0 ? "no sounds added" : null;
     case "webhook":
       if (action.kind.url.trim() === "") return "no URL set";
       return /^https?:\/\//.test(action.kind.url) ? null : "URL must start with http";

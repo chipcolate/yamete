@@ -127,10 +127,18 @@
           </div>
           <div class="field">
             <div class="row">
-              <span>File</span>
-              <button id="sound-pick">Choose…</button>
+              <span>Sounds</span>
+              <button id="sound-pick">Add…</button>
             </div>
-            <p class="path" id="sound-path">—</p>
+            <ul class="filelist" id="sound-list"></ul>
+          </div>
+
+          <div id="order-wrap" hidden>
+            <label class="field-label" for="sound-order">When a slap lands</label>
+            <select id="sound-order">
+              <option value="sequential">Play them in order</option>
+              <option value="random">Pick one at random</option>
+            </select>
           </div>
 
           <label class="row checkbox">

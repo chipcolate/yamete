@@ -444,3 +444,50 @@ code {
   gap: 5px;
   font-size: 12px;
 }
+
+.filelist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.filelist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
+  border-radius: 6px;
+  background: var(--hover);
+}
+.filelist .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px;
+}
+.filelist .drop {
+  flex: none;
+  padding: 0 5px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.filelist .drop:hover {
+  color: var(--danger);
+}
+.filelist .empty {
+  color: var(--muted);
+  font-size: 11px;
+  background: none;
+  padding-left: 0;
+}

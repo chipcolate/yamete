@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod config;
 
-pub use config::{Action, ActionKind, DaemonConfig};
+pub use config::{Action, ActionKind, DaemonConfig, SoundOrder};
 
 /// Where the daemon listens.
 ///

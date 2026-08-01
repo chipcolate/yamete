@@ -54,10 +54,6 @@ function render() {
   $<HTMLInputElement>("cooldown").value = String(d.cooldown_s);
   $("cooldown-out").textContent = `${d.cooldown_s.toFixed(2)} s`;
 
-  const delay = config.actions[0]?.delay_ms ?? 0;
-  $<HTMLInputElement>("delay").value = String(delay);
-  $("delay-out").textContent = `${delay} ms`;
-
   const sound = config.actions.find((a) => a.kind.type === "sound");
   const scaling = sound?.kind.type === "sound" ? sound.kind.scale_with_intensity : false;
   const swing = sound?.kind.type === "sound" ? sound.kind.intensity_range_pct : 40;

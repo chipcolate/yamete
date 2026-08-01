@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Build and install Spank.
+# Build Spank.
 #
 # The sidecar staging order matters: the app spawns the bundled `spankd`, so building the
 # app against a stale copy produces a bundle whose daemon rejects arguments the app passes
 # it — and fails silently, because the child exits before it can log anything.
+#
+# This deliberately does not install or launch anything. Installing is done from the DMG,
+# by hand; anything that copies into /Applications or opens the app behind the user's back
+# fights whatever they are in the middle of doing.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -18,26 +22,28 @@ cp target/release/spankd "app/src-tauri/binaries/spankd-$TRIPLE"
 # Anything Tauri copied next to a previous build would shadow the fresh one.
 rm -f app/src-tauri/target/release/spankd app/src-tauri/target/debug/spankd
 
-# bundle_dmg.sh fails outright if a volume of the same name is already attached, which
-# happens routinely after installing from a previous build.
-if [ -d /Volumes/Spank ]; then
-  echo "==> detaching a mounted Spank volume"
-  hdiutil detach /Volumes/Spank -force >/dev/null 2>&1 || true
-  sleep 1
-fi
+# bundle_dmg.sh fails outright if a volume it wants is already attached. Two ways that
+# happens: a Spank volume left mounted after installing a previous build, and scratch
+# `dmg.*` volumes orphaned by an interrupted bundle run. The second kind does not appear
+# in Finder and accumulates, so each failure makes the next one likelier.
+for vol in /Volumes/Spank /Volumes/dmg.*; do
+  if [ -d "$vol" ]; then
+    echo "==> detaching stale volume $vol"
+    hdiutil detach "$vol" -force >/dev/null 2>&1 || true
+  fi
+done
 
 echo "==> app"
 (cd app && bun run tauri build)
 
-if [ "${1:-}" = "--install" ]; then
-  echo "==> installing"
-  pkill -f 'Spank.app/Contents/MacOS/spank-app' 2>/dev/null || true
-  sleep 1
-  rm -rf /Applications/Spank.app
-  cp -R app/src-tauri/target/release/bundle/macos/Spank.app /Applications/
-  # Keep the build copy out of Launch Services so only one Spank is discoverable.
-  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-    -u "$PWD/app/src-tauri/target/release/bundle/macos/Spank.app" 2>/dev/null || true
-  rm -f "$HOME/Library/Application Support/com.chipcolate.spank/app.sock"
-  echo "installed to /Applications/Spank.app"
+DMG=$(ls -t app/src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1 || true)
+echo
+if [ -n "$DMG" ]; then
+  echo "Ready to install:"
+  echo "  $DMG"
+  echo
+  echo "Quit any running Spank first, then open it and drag across."
+else
+  echo "No DMG was produced." >&2
+  exit 1
 fi

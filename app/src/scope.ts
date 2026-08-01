@@ -16,7 +16,13 @@ const NOMINAL_RATE = 805;
 const MAX_G = 0.8;
 
 interface Marker {
-  /** Ring index where the slap landed. */
+  /**
+   * Total samples written when the slap landed.
+   *
+   * Deliberately not a ring index: once the ring wraps, an old index maps onto a
+   * perfectly valid position holding newer data, so markers from minutes ago reappear as
+   * ghosts against unrelated signal. A monotonic count cannot alias.
+   */
   at: number;
   tier: string;
 }
@@ -27,6 +33,8 @@ export class Scope {
   private gyro: Float32Array;
   private write = 0;
   private filled = 0;
+  /** Total samples ever pushed, used to place markers without ring aliasing. */
+  private written = 0;
   private markers: Marker[] = [];
   private tiers: Tiers | null = null;
   private dpr = 1;
@@ -61,13 +69,16 @@ export class Scope {
       this.envelope[this.write] = frame.envelope[i] ?? 0;
       this.gyro[this.write] = frame.gyro[i] ?? this.gyro[(this.write - 1 + n) % n] ?? 0;
       this.write = (this.write + 1) % n;
+      this.written++;
       if (this.filled < n) this.filled++;
     }
   }
 
   markSlap(tier: string) {
-    this.markers.push({ at: this.write, tier });
-    if (this.markers.length > 32) this.markers.shift();
+    this.markers.push({ at: this.written, tier });
+    // Anything older than the window can never be drawn again.
+    const oldest = this.written - this.envelope.length;
+    this.markers = this.markers.filter((m) => m.at >= oldest);
   }
 
   /** Map a value in g to a y coordinate. */
@@ -157,11 +168,12 @@ export class Scope {
     trace(this.gyro, gyroColor, MAX_G / 120, 1);
     trace(this.envelope, line, 1, 1.5);
 
-    // Slap markers.
+    // Slap markers, placed by age rather than by ring position.
+    const oldest = this.written - this.filled;
     ctx.textBaseline = "top";
     for (const marker of this.markers) {
-      const offset = (marker.at - start + n) % n;
-      if (offset > this.filled) continue;
+      const offset = marker.at - oldest;
+      if (offset < 0 || offset > this.filled) continue;
       const px = (offset / this.filled) * w;
       ctx.strokeStyle =
         marker.tier === "major"

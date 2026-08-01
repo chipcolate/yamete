@@ -24,17 +24,26 @@ rm -f app/src-tauri/target/release/spankd app/src-tauri/target/debug/spankd
 
 # bundle_dmg.sh fails outright if a volume it wants is already attached. Two ways that
 # happens: a Spank volume left mounted after installing a previous build, and scratch
-# `dmg.*` volumes orphaned by an interrupted bundle run. The second kind does not appear
-# in Finder and accumulates, so each failure makes the next one likelier.
-for vol in /Volumes/Spank /Volumes/dmg.*; do
-  if [ -d "$vol" ]; then
-    echo "==> detaching stale volume $vol"
-    hdiutil detach "$vol" -force >/dev/null 2>&1 || true
-  fi
-done
+# `dmg.*` volumes orphaned by an interrupted or failed bundle run. The second kind does
+# not appear in Finder and accumulates, so each failure makes the next one likelier.
+detach_stale_volumes() {
+  for vol in /Volumes/Spank /Volumes/dmg.*; do
+    if [ -d "$vol" ]; then
+      echo "==> detaching stale volume $vol"
+      hdiutil detach "$vol" -force >/dev/null 2>&1 || true
+    fi
+  done
+}
 
 echo "==> app"
-(cd app && bun run tauri build)
+# A failed bundle run leaves its own scratch volume attached, which then fails the next
+# attempt — so clear and retry once rather than making this a two-command ritual.
+if ! (cd app && bun run tauri build); then
+  echo "==> bundling failed, clearing volumes and retrying"
+  detach_stale_volumes
+  sleep 2
+  (cd app && bun run tauri build)
+fi
 
 DMG=$(ls -t app/src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1 || true)
 echo

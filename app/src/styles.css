@@ -491,3 +491,24 @@ code {
   background: none;
   padding-left: 0;
 }
+
+.legend + .legend {
+  margin-top: 3px;
+}
+.legend-title {
+  color: var(--muted);
+}
+/* Vertical strokes, matching the detection markers drawn on the scope. */
+.swatch.mark {
+  width: 2px;
+  height: 9px;
+}
+.swatch.mark.micro {
+  background: rgb(148, 163, 184);
+}
+.swatch.mark.medium {
+  background: rgb(245, 158, 11);
+}
+.swatch.mark.major {
+  background: rgb(239, 68, 68);
+}

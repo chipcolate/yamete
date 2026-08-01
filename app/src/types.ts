@@ -47,6 +47,7 @@ export interface Status {
   slaps: number;
   rate_hz: number;
   warming_up: boolean;
+  telemetry_subscribers: number;
 }
 
 export interface Tiers {

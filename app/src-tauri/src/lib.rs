@@ -44,7 +44,8 @@ pub fn run() {
             daemon::get_status,
             daemon::test_action,
             daemon::is_connected,
-            daemon::set_telemetry,
+            daemon::set_scope_visible,
+            quit_app,
             open_logs,
         ])
         .setup(move |app| {
@@ -102,6 +103,12 @@ fn stop_telemetry(app: &tauri::AppHandle) {
     if let Some(daemon) = app.try_state::<Arc<daemon::Daemon>>() {
         daemon.set_telemetry(false);
     }
+}
+
+/// Quit from the UI, which shuts the daemon down on the way out.
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
 }
 
 /// Whether this app started the daemon, as opposed to attaching to an existing one.

@@ -4,6 +4,8 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import { Scope } from "./scope";
 import type { Action, DaemonConfig, Slap, Status, Telemetry } from "./types";
+import * as actions from "./actions";
+import type { ActionId } from "./actions";
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -72,7 +74,8 @@ function render() {
   $("toggle").textContent = config.enabled ? "Pause detection" : "Resume detection";
 
   scope.setTiers(d.tiers);
-  renderActions(config.actions);
+  renderActionPages();
+
 }
 
 /** Plain-language summary, from the measured sweep over the recorded corpus. */
@@ -84,65 +87,7 @@ function describeSensitivity(value: number): string {
   return "Twitchy — anything that shakes the desk counts.";
 }
 
-function renderActions(actions: Action[]) {
-  const host = $("actions");
-  host.replaceChildren();
-
-  if (actions.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "hint";
-    empty.textContent = "No actions configured.";
-    host.append(empty);
-    return;
-  }
-
-  for (const action of actions) {
-    const row = document.createElement("div");
-    row.className = "action";
-
-    const on = document.createElement("input");
-    on.type = "checkbox";
-    on.checked = action.enabled;
-    on.addEventListener("change", () => {
-      action.enabled = on.checked;
-      pushConfig();
-    });
-
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = action.name || action.id;
-
-    const kind = document.createElement("span");
-    kind.className = "kind";
-    kind.textContent = describeAction(action);
-
-    const test = document.createElement("button");
-    test.textContent = "Test";
-    test.addEventListener("click", async () => {
-      try {
-        await invoke("test_action", { id: action.id, intensity: 0.85 });
-      } catch (e) {
-        toast(String(e));
-      }
-    });
-
-    row.append(on, name, kind);
-
-    // Sounds are the one action kind with a file to choose; exec and webhook are edited
-    // in the config file for now.
-    if (action.kind.type === "sound") {
-      const choose = document.createElement("button");
-      choose.textContent = "Choose…";
-      choose.addEventListener("click", () => void pickSound(action));
-      row.append(choose);
-    }
-
-    row.append(test);
-    host.append(row);
-  }
-}
-
-/** Formats the decoder understands. Anything outside this list would fail to load. */
+/** Formats the decoder understands; anything else would fail to load. */
 const AUDIO_EXTENSIONS = [
   "wav",
   "mp3",
@@ -156,58 +101,282 @@ const AUDIO_EXTENSIONS = [
   "aac",
 ];
 
-async function pickSound(action: Action) {
-  if (action.kind.type !== "sound") return;
+async function pick(
+  title: string,
+  filters?: { name: string; extensions: string[] }[],
+): Promise<string | null> {
+  const picked = await openDialog({
+    multiple: false,
+    directory: false,
+    title,
+    ...(filters ? { filters } : {}),
+  });
+  return typeof picked === "string" ? picked : null;
+}
+
+/// Fire one action, refusing when it is not configured enough to do anything.
+///
+/// A webhook with no URL is a half-finished edit rather than an error the daemon should
+/// reject, but silently doing nothing would read as a broken Test button.
+async function testAction(id: ActionId) {
+  if (!config) return;
+  const action = actions.find(config, id);
+  if (!action) return;
+  const problem = actions.incompleteReason(action);
+  if (problem) {
+    toast(`${actions.ACTION_LABELS[id]}: ${problem}`);
+    return;
+  }
   try {
-    const picked = await openDialog({
-      multiple: false,
-      directory: false,
-      title: "Choose a sound",
-      filters: [{ name: "Audio", extensions: AUDIO_EXTENSIONS }],
-    });
-    if (typeof picked !== "string") return; // cancelled
-
-    action.kind.path = picked;
-    pushConfig();
-    render();
-
-    // Play it straight away. The daemon decodes on config change, so a file it cannot
-    // read shows up here as silence rather than as an error in a log nobody reads.
-    setTimeout(() => {
-      invoke("test_action", { id: action.id, intensity: 0.85 }).catch((e) =>
-        toast(String(e)),
-      );
-    }, 400);
+    await invoke("test_action", { id, intensity: 0.85 });
   } catch (e) {
     toast(String(e));
   }
 }
 
-function describeAction(action: Action): string {
-  switch (action.kind.type) {
-    case "sound":
-      return action.kind.path.split("/").pop() ?? "sound";
-    case "exec":
-      return action.kind.program.split("/").pop() ?? "exec";
-    case "webhook":
-      try {
-        return new URL(action.kind.url).host;
-      } catch {
-        return "webhook";
-      }
+/** UI-only preference; the daemon has no opinion about what the user is allowed to see. */
+function advancedUnlocked(): boolean {
+  return localStorage.getItem("spank.advanced") === "1";
+}
+
+function setAdvanced(on: boolean) {
+  localStorage.setItem("spank.advanced", on ? "1" : "0");
+  $("exec-row").hidden = !on;
+  // Turning the gate off does not disable a command that is already running — that would
+  // be a surprising thing for a visibility switch to do — but it does hide its editor.
+  renderNav();
+}
+
+/** Rebuild the sidebar sub-items for whichever actions are switched on. */
+function renderNav() {
+  const host = $("nav-actions");
+  host.replaceChildren();
+  if (!config) return;
+
+  for (const id of actions.ACTION_IDS) {
+    if (!actions.isEnabled(config, id)) continue;
+    if (actions.IS_ADVANCED[id] && !advancedUnlocked()) continue;
+
+    const item = document.createElement("button");
+    item.className = "nav-item";
+    item.dataset.section = id;
+    item.textContent = actions.ACTION_LABELS[id];
+    item.addEventListener("click", () => showSection(id));
+    host.append(item);
+  }
+  // The active class lives on nav items that are rebuilt here, so restore it.
+  markActiveNav(currentSection);
+}
+
+/** Controls every action shares: which severities fire it, how hard, how late. */
+function renderCommon(id: ActionId) {
+  if (!config) return;
+  const host = document.querySelector<HTMLElement>(`.common[data-action="${id}"]`);
+  if (!host) return;
+  const action = actions.ensure(config, id);
+  host.replaceChildren();
+
+  const tierRow = document.createElement("div");
+  tierRow.className = "tier-picker";
+  for (const tier of actions.ALL_TIERS) {
+    const label = document.createElement("label");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    // An empty list means "all tiers", which is the daemon's convention.
+    box.checked = action.tiers.length === 0 || action.tiers.includes(tier);
+    box.addEventListener("change", () => {
+      const chosen = actions.ALL_TIERS.filter((t) => {
+        const el = tierRow.querySelector<HTMLInputElement>(`input[data-tier="${t}"]`);
+        return el?.checked ?? false;
+      });
+      // All three selected is the same as no filter; store it that way so the config
+      // stays meaningful if new tiers ever appear.
+      action.tiers = chosen.length === actions.ALL_TIERS.length ? [] : chosen;
+      pushConfig();
+    });
+    box.dataset.tier = tier;
+    label.append(box, document.createTextNode(tier));
+    tierRow.append(label);
+  }
+  const tierLabel = document.createElement("label");
+  tierLabel.className = "field-label";
+  tierLabel.textContent = "Fires on";
+  host.append(tierLabel, tierRow);
+
+  host.append(
+    slider({
+      label: "Minimum force",
+      value: action.min_intensity,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      format: (v) => (v === 0 ? "any" : v.toFixed(2)),
+      onInput: (v) => {
+        action.min_intensity = v;
+        pushConfig();
+      },
+    }),
+  );
+
+  host.append(
+    slider({
+      label: "Delay",
+      value: action.delay_ms,
+      min: 0,
+      max: 600,
+      step: 10,
+      format: (v) => `${v} ms`,
+      onInput: (v) => {
+        action.delay_ms = v;
+        pushConfig();
+      },
+    }),
+  );
+}
+
+interface SliderSpec {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  format: (v: number) => string;
+  onInput: (v: number) => void;
+}
+
+function slider(spec: SliderSpec): HTMLElement {
+  const wrap = document.createElement("div");
+  const row = document.createElement("div");
+  row.className = "row";
+  const name = document.createElement("span");
+  name.textContent = spec.label;
+  const out = document.createElement("output");
+  out.textContent = spec.format(spec.value);
+  row.append(name, out);
+
+  const input = document.createElement("input");
+  input.type = "range";
+  input.min = String(spec.min);
+  input.max = String(spec.max);
+  input.step = String(spec.step);
+  input.value = String(spec.value);
+  input.addEventListener("input", () => {
+    const v = Number(input.value);
+    out.textContent = spec.format(v);
+    spec.onInput(v);
+  });
+
+  wrap.append(row, input);
+  return wrap;
+}
+
+function renderActionPages() {
+  if (!config) return;
+
+  // Sound
+  const sound = actions.ensure(config, "sound");
+  if (sound.kind.type === "sound") {
+    $("sound-path").textContent = sound.kind.path || "—";
+    $<HTMLInputElement>("scale-volume").checked = sound.kind.scale_with_intensity;
+    $<HTMLInputElement>("volume-range").value = String(sound.kind.intensity_range_pct);
+    $("volume-range-out").textContent = `± ${sound.kind.intensity_range_pct.toFixed(0)}%`;
+    $("range-wrap").hidden = !sound.kind.scale_with_intensity;
+    $("scale-hint").textContent = sound.kind.scale_with_intensity
+      ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
+      : "Off: sounds play at your system volume.";
+  }
+
+  // Webhook
+  const webhook = actions.ensure(config, "webhook");
+  if (webhook.kind.type === "webhook") {
+    $<HTMLInputElement>("webhook-url").value = webhook.kind.url;
+    $<HTMLSelectElement>("webhook-method").value = webhook.kind.method;
+    $<HTMLTextAreaElement>("webhook-headers").value = actions.formatHeaders(
+      webhook.kind.headers,
+    );
+    $<HTMLTextAreaElement>("webhook-body").value = webhook.kind.body ?? "";
+  }
+
+  // Exec
+  const exec = actions.ensure(config, "exec");
+  if (exec.kind.type === "exec") {
+    $("exec-path").textContent = exec.kind.program || "—";
+    $<HTMLTextAreaElement>("exec-args").value = exec.kind.args.join("\n");
+    $<HTMLInputElement>("exec-stdin").checked = exec.kind.stdin_json;
+  }
+
+  for (const id of actions.ACTION_IDS) {
+    $<HTMLInputElement>(`on-${id}`).checked = actions.isEnabled(config, id);
+    renderCommon(id);
+  }
+  renderNav();
+}
+
+/** Render a label/value grid. */
+function facts(host: HTMLElement, rows: Array<[string, string]>) {
+  host.replaceChildren();
+  for (const [label, value] of rows) {
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = value;
+    host.append(dt, dd);
   }
 }
 
 function renderStatus(status: Status) {
-  const parts = [
-    `${status.rate_hz.toFixed(0)} Hz`,
-    status.has_gyro ? "gyro" : "no gyro",
-    `${status.slaps} slap${status.slaps === 1 ? "" : "s"}`,
-  ];
-  if (status.warming_up) parts.push("warming up");
-  $("daemon-meta").textContent = parts.join(" · ");
   $("status-text").textContent = status.enabled ? "detecting" : "paused";
+
+  facts($("facts"), [
+    ["Slaps", String(status.slaps)],
+    [
+      "State",
+      status.warming_up ? "warming up" : status.enabled ? "detecting" : "paused",
+    ],
+  ]);
+
+  facts($("about-facts"), [
+    ["Version", status.version],
+    ["Sensor", `${status.rate_hz.toFixed(0)} Hz`],
+    ["Gyroscope", status.has_gyro ? "present" : "not found"],
+    ["Uptime", `${Math.floor(status.uptime_s / 60)}m ${Math.floor(status.uptime_s % 60)}s`],
+    ["Slaps", String(status.slaps)],
+    ["Telemetry", `${status.telemetry_subscribers} subscriber(s)`],
+  ]);
 }
+
+// --- sections ---
+
+/// Telemetry only matters while the scope is actually on screen, so switching away from
+/// Monitor stops the daemon generating frames just as hiding the window does.
+let currentSection = "monitor";
+
+function markActiveNav(name: string) {
+  for (const item of document.querySelectorAll<HTMLElement>(".nav-item")) {
+    item.classList.toggle("is-active", item.dataset.section === name);
+  }
+}
+
+function showSection(name: string) {
+  currentSection = name;
+  markActiveNav(name);
+  for (const page of document.querySelectorAll<HTMLElement>(".page")) {
+    page.classList.toggle("is-active", page.dataset.page === name);
+  }
+  if (name === "monitor") {
+    // The canvas was display:none, so it has no useful size until now.
+    requestAnimationFrame(() => scope.resize());
+  }
+  invoke("set_scope_visible", { visible: name === "monitor" }).catch(() => {});
+}
+
+for (const item of document.querySelectorAll<HTMLElement>(".nav-item")) {
+  item.addEventListener("click", () => showSection(item.dataset.section ?? "monitor"));
+}
+
+$("quit").addEventListener("click", () => {
+  invoke("quit_app").catch((e) => toast(String(e)));
+});
 
 // --- wiring ---
 
@@ -220,43 +389,11 @@ $("sensitivity").addEventListener("input", (e) => {
   pushConfig();
 });
 
-$("delay").addEventListener("input", (e) => {
-  if (!config) return;
-  const value = Number((e.target as HTMLInputElement).value);
-  // Applies to every action: a webhook driving a light wants the same beat as a sound.
-  for (const action of config.actions) action.delay_ms = value;
-  $("delay-out").textContent = `${value} ms`;
-  pushConfig();
-});
-
 $("cooldown").addEventListener("input", (e) => {
   if (!config) return;
   const value = Number((e.target as HTMLInputElement).value);
   config.detector.cooldown_s = value;
   $("cooldown-out").textContent = `${value.toFixed(2)} s`;
-  pushConfig();
-});
-
-$("scale-volume").addEventListener("change", (e) => {
-  if (!config) return;
-  const on = (e.target as HTMLInputElement).checked;
-  for (const action of config.actions) {
-    if (action.kind.type === "sound") action.kind.scale_with_intensity = on;
-  }
-  $("range-wrap").hidden = !on;
-  $("scale-hint").textContent = on
-    ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
-    : "Off: sounds play at your system volume.";
-  pushConfig();
-});
-
-$("volume-range").addEventListener("input", (e) => {
-  if (!config) return;
-  const value = Number((e.target as HTMLInputElement).value);
-  for (const action of config.actions) {
-    if (action.kind.type === "sound") action.kind.intensity_range_pct = value;
-  }
-  $("volume-range-out").textContent = `± ${value.toFixed(0)}%`;
   pushConfig();
 });
 
@@ -275,6 +412,128 @@ $("toggle").addEventListener("click", async () => {
     toast(String(e));
   }
 });
+
+// --- action editors ---
+
+for (const id of actions.ACTION_IDS) {
+  $(`on-${id}`).addEventListener("change", (e) => {
+    if (!config) return;
+    const on = (e.target as HTMLInputElement).checked;
+    actions.ensure(config, id).enabled = on;
+    pushConfig();
+    renderNav();
+    // Jump straight to the settings for whatever was just switched on — it needs
+    // configuring before it can do anything, and hiding that behind a second click is
+    // how you end up with an enabled webhook pointing at nothing.
+    if (on) showSection(id);
+    else if (currentSection === id) showSection("actions");
+  });
+}
+
+$("advanced").addEventListener("change", (e) => {
+  const on = (e.target as HTMLInputElement).checked;
+  setAdvanced(on);
+  if (!on && currentSection === "exec") showSection("actions");
+});
+
+// Sound
+$("sound-pick").addEventListener("click", async () => {
+  if (!config) return;
+  const path = await pick("Choose a sound", [
+    { name: "Audio", extensions: AUDIO_EXTENSIONS },
+  ]).catch(() => null);
+  if (!path) return;
+  const action = actions.ensure(config, "sound");
+  if (action.kind.type === "sound") action.kind.path = path;
+  $("sound-path").textContent = path;
+  pushConfig();
+  // Play it: the daemon logs decode failures somewhere nobody looks, and hearing it is
+  // the confirmation that matters.
+  setTimeout(() => void testAction("sound"), 400);
+});
+
+$("sound-test").addEventListener("click", () => void testAction("sound"));
+
+$("scale-volume").addEventListener("change", (e) => {
+  if (!config) return;
+  const on = (e.target as HTMLInputElement).checked;
+  const action = actions.ensure(config, "sound");
+  if (action.kind.type === "sound") action.kind.scale_with_intensity = on;
+  $("range-wrap").hidden = !on;
+  $("scale-hint").textContent = on
+    ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
+    : "Off: sounds play at your system volume.";
+  pushConfig();
+});
+
+$("volume-range").addEventListener("input", (e) => {
+  if (!config) return;
+  const value = Number((e.target as HTMLInputElement).value);
+  const action = actions.ensure(config, "sound");
+  if (action.kind.type === "sound") action.kind.intensity_range_pct = value;
+  $("volume-range-out").textContent = `± ${value.toFixed(0)}%`;
+  pushConfig();
+});
+
+// Webhook
+function editWebhook(mutate: (kind: Extract<Action["kind"], { type: "webhook" }>) => void) {
+  if (!config) return;
+  const action = actions.ensure(config, "webhook");
+  if (action.kind.type !== "webhook") return;
+  mutate(action.kind);
+  pushConfig();
+}
+
+$("webhook-url").addEventListener("input", (e) =>
+  editWebhook((k) => (k.url = (e.target as HTMLInputElement).value.trim())),
+);
+$("webhook-method").addEventListener("change", (e) =>
+  editWebhook((k) => (k.method = (e.target as HTMLSelectElement).value)),
+);
+$("webhook-headers").addEventListener("input", (e) =>
+  editWebhook(
+    (k) => (k.headers = actions.parseHeaders((e.target as HTMLTextAreaElement).value)),
+  ),
+);
+$("webhook-body").addEventListener("input", (e) =>
+  editWebhook((k) => {
+    const text = (e.target as HTMLTextAreaElement).value;
+    // Empty means "send the slap as JSON", which is not the same as sending nothing.
+    k.body = text.trim() === "" ? null : text;
+  }),
+);
+$("webhook-test").addEventListener("click", () => void testAction("webhook"));
+
+// Exec
+$("exec-pick").addEventListener("click", async () => {
+  if (!config) return;
+  const path = await pick("Choose a program").catch(() => null);
+  if (!path) return;
+  const action = actions.ensure(config, "exec");
+  if (action.kind.type === "exec") action.kind.program = path;
+  $("exec-path").textContent = path;
+  pushConfig();
+});
+
+$("exec-args").addEventListener("input", (e) => {
+  if (!config) return;
+  const action = actions.ensure(config, "exec");
+  if (action.kind.type === "exec") {
+    action.kind.args = actions.parseLines((e.target as HTMLTextAreaElement).value);
+  }
+  pushConfig();
+});
+
+$("exec-stdin").addEventListener("change", (e) => {
+  if (!config) return;
+  const action = actions.ensure(config, "exec");
+  if (action.kind.type === "exec") {
+    action.kind.stdin_json = (e.target as HTMLInputElement).checked;
+  }
+  pushConfig();
+});
+
+$("exec-test").addEventListener("click", () => void testAction("exec"));
 
 $("logs").addEventListener("click", () => {
   invoke("open_logs").catch((e) => toast(String(e)));
@@ -362,6 +621,10 @@ async function step(name: string, run: () => Promise<void>) {
     toast(`${name}: ${e}`);
   }
 }
+
+$<HTMLInputElement>("advanced").checked = advancedUnlocked();
+setAdvanced(advancedUnlocked());
+showSection("monitor");
 
 void (async () => {
   // The subscription connects before the webview finishes registering its listeners, so

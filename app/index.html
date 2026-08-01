@@ -16,79 +16,225 @@
       </div>
     </header>
 
-    <main>
-      <section class="panel">
-        <div class="scope-wrap">
-          <canvas id="scope"></canvas>
-          <div id="scope-empty" class="scope-empty">waiting for the daemon…</div>
+    <div class="shell">
+      <nav id="nav" aria-label="Sections">
+        <button class="nav-item is-active" data-section="monitor">
+          <span class="nav-glyph" aria-hidden="true">◠</span> Monitor
+        </button>
+        <button class="nav-item" data-section="detection">
+          <span class="nav-glyph" aria-hidden="true">◎</span> Detection
+        </button>
+        <button class="nav-item" data-section="actions">
+          <span class="nav-glyph" aria-hidden="true">▶</span> Actions
+        </button>
+        <!-- Sub-items for enabled actions are inserted here. -->
+        <div id="nav-actions" class="nav-sub"></div>
+        <button class="nav-item" data-section="about">
+          <span class="nav-glyph" aria-hidden="true">◆</span> About
+        </button>
+        <div class="nav-foot">
+          <button id="toggle" class="wide">Pause detection</button>
         </div>
-        <div class="legend">
-          <span><i class="swatch accel"></i>acceleration</span>
-          <span><i class="swatch gyro"></i>rotation</span>
-          <span id="last-slap" class="last-slap"></span>
-        </div>
-      </section>
+      </nav>
 
-      <section class="panel">
-        <label class="row" for="sensitivity">
-          <span>Sensitivity</span>
-          <output id="sensitivity-out">0.50</output>
-        </label>
-        <input id="sensitivity" type="range" min="0" max="1" step="0.01" value="0.5" />
-        <p class="hint" id="sensitivity-hint">
-          Higher catches gentler taps and more desk bumps.
-        </p>
+      <main>
+        <!-- Monitor -->
+        <section class="page is-active" data-page="monitor">
+          <div class="scope-wrap">
+            <canvas id="scope"></canvas>
+            <div id="scope-empty" class="scope-empty">waiting for the daemon…</div>
+          </div>
+          <div class="legend">
+            <span><i class="swatch accel"></i>acceleration</span>
+            <span><i class="swatch gyro"></i>rotation</span>
+            <span id="last-slap" class="last-slap"></span>
+          </div>
+          <dl class="facts" id="facts"></dl>
+          <p class="hint">
+            Dashed lines are the severity bands. Slap the machine and watch where the
+            spike lands — that is what the sensitivity slider moves.
+          </p>
+        </section>
 
-        <label class="row" for="delay">
-          <span>Response delay</span>
-          <output id="delay-out">200 ms</output>
-        </label>
-        <input id="delay" type="range" min="0" max="600" step="10" value="200" />
-        <p class="hint">
-          Detection beats the sound of the slap itself; a short delay lets the impact
-          finish first.
-        </p>
-
-        <label class="row" for="cooldown">
-          <span>Cooldown</span>
-          <output id="cooldown-out">0.75 s</output>
-        </label>
-        <input id="cooldown" type="range" min="0.1" max="3" step="0.05" value="0.75" />
-
-        <label class="row checkbox">
-          <input id="scale-volume" type="checkbox" />
-          <span>Vary volume with force</span>
-        </label>
-        <p class="hint" id="scale-hint">
-          Off: sounds play at your system volume.
-        </p>
-        <div id="range-wrap" hidden>
-          <label class="row" for="volume-range">
-            <span>Volume swing</span>
-            <output id="volume-range-out">± 40%</output>
+        <!-- Detection -->
+        <section class="page" data-page="detection">
+          <label class="row" for="sensitivity">
+            <span>Sensitivity</span>
+            <output id="sensitivity-out">0.50</output>
           </label>
-          <input id="volume-range" type="range" min="0" max="100" step="5" value="40" />
-        </div>
+          <input id="sensitivity" type="range" min="0" max="1" step="0.01" value="0.5" />
+          <p class="hint" id="sensitivity-hint">
+            Higher catches gentler taps and more desk bumps.
+          </p>
 
-        <label class="row checkbox">
-          <input id="lowpower" type="checkbox" />
-          <span>Low power mode <em>(402 Hz, about half the CPU)</em></span>
-        </label>
-      </section>
+          <label class="row" for="cooldown">
+            <span>Cooldown</span>
+            <output id="cooldown-out">0.75 s</output>
+          </label>
+          <input id="cooldown" type="range" min="0.1" max="3" step="0.05" value="0.75" />
+          <p class="hint">
+            Minimum gap between detections. One slap rings the chassis for a while; this
+            keeps that from counting twice.
+          </p>
 
-      <section class="panel">
-        <div class="row"><span class="section-title">Actions</span></div>
-        <div id="actions"></div>
-      </section>
+          <label class="row checkbox">
+            <input id="lowpower" type="checkbox" />
+            <span>Low power mode</span>
+          </label>
+          <p class="hint">
+            Reads the sensor at 402 Hz instead of 805 Hz, for about half the CPU. Same
+            recall at slightly higher sensitivity, with a few more false positives.
+          </p>
+        </section>
 
-      <section class="panel meta">
-        <div id="daemon-meta"></div>
-        <div class="buttons">
-          <button id="toggle">Pause detection</button>
-          <button id="logs" class="secondary">Show logs</button>
-        </div>
-      </section>
-    </main>
+        <!-- Actions: what happens when a slap lands -->
+        <section class="page" data-page="actions">
+          <p class="hint top">
+            Turn on what a slap should do. Each one you enable gets its own section in the
+            sidebar.
+          </p>
+
+          <label class="row checkbox">
+            <input id="on-sound" type="checkbox" />
+            <span>Play a sound</span>
+          </label>
+          <label class="row checkbox">
+            <input id="on-webhook" type="checkbox" />
+            <span>Send an HTTP request</span>
+          </label>
+          <label class="row checkbox" id="exec-row" hidden>
+            <input id="on-exec" type="checkbox" />
+            <span>Run a command</span>
+          </label>
+
+          <hr />
+          <label class="row checkbox">
+            <input id="advanced" type="checkbox" />
+            <span>Advanced</span>
+          </label>
+          <p class="hint">
+            Unlocks running an arbitrary command on every slap. It receives the event as
+            JSON on stdin and as <code>SPANK_*</code> environment variables, so it can do
+            anything you can script — which is also why it is behind this switch.
+          </p>
+        </section>
+
+        <!-- Sound -->
+        <section class="page" data-page="sound">
+          <div class="row">
+            <span class="section-title">Sound</span>
+            <button id="sound-test">Test</button>
+          </div>
+          <div class="field">
+            <div class="row">
+              <span>File</span>
+              <button id="sound-pick">Choose…</button>
+            </div>
+            <p class="path" id="sound-path">—</p>
+          </div>
+
+          <label class="row checkbox">
+            <input id="scale-volume" type="checkbox" />
+            <span>Vary volume with force</span>
+          </label>
+          <p class="hint" id="scale-hint">Off: sounds play at your system volume.</p>
+          <div id="range-wrap" hidden>
+            <label class="row" for="volume-range">
+              <span>Volume swing</span>
+              <output id="volume-range-out">± 40%</output>
+            </label>
+            <input id="volume-range" type="range" min="0" max="100" step="5" value="40" />
+          </div>
+
+          <div class="common" data-action="sound"></div>
+        </section>
+
+        <!-- Webhook -->
+        <section class="page" data-page="webhook">
+          <div class="row">
+            <span class="section-title">HTTP request</span>
+            <button id="webhook-test">Test</button>
+          </div>
+
+          <label class="field-label" for="webhook-url">URL</label>
+          <input id="webhook-url" type="text" placeholder="https://example.com/hook" />
+
+          <label class="field-label" for="webhook-method">Method</label>
+          <select id="webhook-method">
+            <option>POST</option>
+            <option>GET</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+          </select>
+
+          <label class="field-label" for="webhook-headers">Headers</label>
+          <textarea
+            id="webhook-headers"
+            rows="2"
+            placeholder="Authorization: Bearer …&#10;one per line"
+          ></textarea>
+
+          <label class="field-label" for="webhook-body">Body</label>
+          <textarea
+            id="webhook-body"
+            rows="3"
+            placeholder="Leave empty to send the slap as JSON"
+          ></textarea>
+          <p class="hint">
+            URL, headers and body accept <code>{{intensity}}</code>,
+            <code>{{tier}}</code>, <code>{{peak_g}}</code>, <code>{{gyro_peak}}</code> and
+            the other event fields.
+          </p>
+
+          <div class="common" data-action="webhook"></div>
+        </section>
+
+        <!-- Exec -->
+        <section class="page" data-page="exec">
+          <div class="row">
+            <span class="section-title">Command</span>
+            <button id="exec-test">Test</button>
+          </div>
+
+          <div class="field">
+            <div class="row">
+              <span>Program</span>
+              <button id="exec-pick">Choose…</button>
+            </div>
+            <p class="path" id="exec-path">—</p>
+          </div>
+
+          <label class="field-label" for="exec-args">Arguments</label>
+          <textarea id="exec-args" rows="3" placeholder="one per line"></textarea>
+
+          <label class="row checkbox">
+            <input id="exec-stdin" type="checkbox" />
+            <span>Send the slap as JSON on stdin</span>
+          </label>
+          <p class="hint">
+            Arguments accept the same <code>{{…}}</code> placeholders. The event is also
+            in the environment as <code>SPANK_TIER</code>, <code>SPANK_INTENSITY</code>
+            and so on.
+          </p>
+
+          <div class="common" data-action="exec"></div>
+        </section>
+
+        <!-- About -->
+        <section class="page" data-page="about">
+          <dl class="facts" id="about-facts"></dl>
+          <p class="hint">
+            Detection runs while Spank is open and stops when you quit it. The sensor is
+            the undocumented IMU behind the Sensor Processing Unit, read over IOKit HID.
+          </p>
+          <div class="buttons">
+            <button id="logs" class="secondary">Show logs</button>
+            <button id="quit" class="secondary">Quit Spank</button>
+          </div>
+        </section>
+      </main>
+    </div>
 
     <div id="toast" class="toast" hidden></div>
     <script type="module" src="/src/main.ts"></script>

@@ -147,8 +147,22 @@ impl Action {
     /// Whether this action should run for a given detection.
     pub fn matches(&self, tier: Tier, intensity: f32) -> bool {
         self.enabled
+            && self.is_runnable()
             && (self.tiers.is_empty() || self.tiers.contains(&tier))
             && intensity >= self.min_intensity
+    }
+
+    /// Whether this action has enough configuration to do anything.
+    ///
+    /// Distinct from validity: an action the user has switched on but not filled in yet
+    /// is incomplete, not wrong, and rejecting the whole config for it would make the UI
+    /// unusable — you cannot type a URL into a field that refuses to save.
+    pub fn is_runnable(&self) -> bool {
+        match &self.kind {
+            ActionKind::Sound { path, .. } => !path.as_os_str().is_empty(),
+            ActionKind::Exec { program, .. } => !program.trim().is_empty(),
+            ActionKind::Webhook { url, .. } => !url.trim().is_empty(),
+        }
     }
 
     fn validate(&self) -> Result<(), String> {
@@ -166,7 +180,6 @@ impl Action {
         }
         match &self.kind {
             ActionKind::Sound {
-                path,
                 playback_rate,
                 intensity_range_pct,
                 ..
@@ -177,9 +190,6 @@ impl Action {
                         self.id
                     ));
                 }
-                if path.as_os_str().is_empty() {
-                    return Err(format!("action `{}`: sound path is empty", self.id));
-                }
                 if *playback_rate <= 0.0 {
                     return Err(format!(
                         "action `{}`: playback_rate must be positive",
@@ -187,13 +197,13 @@ impl Action {
                     ));
                 }
             }
-            ActionKind::Exec { program, .. } => {
-                if program.trim().is_empty() {
-                    return Err(format!("action `{}`: program is empty", self.id));
-                }
-            }
+            ActionKind::Exec { .. } => {}
             ActionKind::Webhook { url, .. } => {
-                if !url.starts_with("http://") && !url.starts_with("https://") {
+                // An empty URL is simply not filled in yet. A non-empty one that is not
+                // HTTP is a mistake worth naming.
+                let url = url.trim();
+                if !url.is_empty() && !url.starts_with("http://") && !url.starts_with("https://")
+                {
                     return Err(format!(
                         "action `{}`: webhook url must start with http:// or https://",
                         self.id
@@ -410,8 +420,48 @@ mod tests {
     }
 
     #[test]
-    fn validation_rejects_nonsense_values() {
-        let bad_url = DaemonConfig {
+    fn an_unconfigured_action_is_valid_but_does_not_fire() {
+        // Switching an action on before filling it in must not make the whole config
+        // unsaveable, or the UI cannot let you type a URL at all.
+        let mut config = DaemonConfig::default();
+        config.actions.push(Action {
+            id: "webhook".into(),
+            enabled: true,
+            kind: ActionKind::Webhook {
+                url: String::new(),
+                method: "POST".into(),
+                headers: BTreeMap::new(),
+                body: None,
+                timeout_ms: 5000,
+            },
+            ..Default::default()
+        });
+        assert!(config.validate().is_ok(), "{:?}", config.validate());
+
+        let webhook = config.action("webhook").unwrap();
+        assert!(!webhook.is_runnable());
+        assert!(
+            !webhook.matches(Tier::Major, 1.0),
+            "an action with nowhere to send anything must not fire"
+        );
+
+        // Once filled in, it fires.
+        let mut filled = webhook.clone();
+        filled.kind = ActionKind::Webhook {
+            url: "https://example.com/hook".into(),
+            method: "POST".into(),
+            headers: BTreeMap::new(),
+            body: None,
+            timeout_ms: 5000,
+        };
+        assert!(filled.is_runnable());
+        assert!(filled.matches(Tier::Major, 1.0));
+    }
+
+    #[test]
+    fn a_malformed_url_is_still_rejected() {
+        // Incomplete is fine; wrong is not.
+        let config = DaemonConfig {
             actions: vec![Action {
                 id: "hook".into(),
                 kind: ActionKind::Webhook {
@@ -419,31 +469,20 @@ mod tests {
                     method: "POST".into(),
                     headers: BTreeMap::new(),
                     body: None,
-                    timeout_ms: 100,
+                    timeout_ms: 5000,
                 },
                 ..Default::default()
             }],
             ..Default::default()
         };
-        assert!(bad_url.validate().unwrap_err().contains("http"));
+        assert!(config.validate().unwrap_err().contains("http"));
+    }
 
+    #[test]
+    fn validation_rejects_nonsense_values() {
         let mut bad_sensitivity = DaemonConfig::default();
         bad_sensitivity.detector.sensitivity = 5.0;
         assert!(bad_sensitivity.validate().unwrap_err().contains("sensitivity"));
-
-        let empty_program = DaemonConfig {
-            actions: vec![Action {
-                id: "run".into(),
-                kind: ActionKind::Exec {
-                    program: "  ".into(),
-                    args: vec![],
-                    stdin_json: true,
-                },
-                ..Default::default()
-            }],
-            ..Default::default()
-        };
-        assert!(empty_program.validate().unwrap_err().contains("program"));
 
         let bad_rate = DaemonConfig {
             actions: vec![Action {

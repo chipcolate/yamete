@@ -29,6 +29,12 @@ pub struct Daemon {
     connected: Arc<AtomicBool>,
     /// Whether anyone wants telemetry right now.
     want_telemetry: Arc<AtomicBool>,
+    /// Whether the scope is the section currently on screen.
+    ///
+    /// ANDed with window visibility, so telemetry stops both when the window is hidden
+    /// and when the user is looking at a different section. The daemon does no telemetry
+    /// work in either case.
+    scope_visible: Arc<AtomicBool>,
     /// Serialises request/reply exchanges, which use their own short-lived connection.
     request_lock: Mutex<()>,
 }
@@ -38,6 +44,7 @@ impl Daemon {
         Daemon {
             connected: Arc::new(AtomicBool::new(false)),
             want_telemetry: Arc::new(AtomicBool::new(false)),
+            scope_visible: Arc::new(AtomicBool::new(true)),
             request_lock: Mutex::new(()),
         }
     }
@@ -48,7 +55,13 @@ impl Daemon {
 
     /// Ask the daemon to start or stop streaming telemetry to us.
     pub fn set_telemetry(&self, want: bool) {
-        self.want_telemetry.store(want, Ordering::Relaxed);
+        self.want_telemetry
+            .store(want && self.scope_visible.load(Ordering::Relaxed), Ordering::Relaxed);
+    }
+
+    /// Record whether the scope section is on screen.
+    pub fn set_scope_visible(&self, visible: bool) {
+        self.scope_visible.store(visible, Ordering::Relaxed);
     }
 
     /// Send one request and wait for one reply.
@@ -277,8 +290,8 @@ pub fn is_connected(daemon: tauri::State<'_, Arc<Daemon>>) -> bool {
     daemon.is_connected()
 }
 
-/// Start or stop telemetry, driven by whether the scope is on screen.
+/// Tell the daemon whether the scope section is the one being displayed.
 #[tauri::command]
-pub fn set_telemetry(daemon: tauri::State<'_, Arc<Daemon>>, enabled: bool) {
-    daemon.set_telemetry(enabled);
+pub fn set_scope_visible(daemon: tauri::State<'_, Arc<Daemon>>, visible: bool) {
+    daemon.set_scope_visible(visible);
 }

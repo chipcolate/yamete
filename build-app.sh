@@ -39,10 +39,12 @@ echo "==> app"
 DMG=$(ls -t app/src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1 || true)
 echo
 if [ -n "$DMG" ]; then
-  echo "Ready to install:"
-  echo "  $DMG"
+  echo "Built $DMG"
   echo
-  echo "Quit any running Spank first, then open it and drag across."
+  echo "Quit any running Spank, then install with:"
+  # Printed as a command rather than a bare path: pasting a path into a shell tries to
+  # execute it, which fails with a permission error that says nothing useful.
+  echo "  open $DMG"
 else
   echo "No DMG was produced." >&2
   exit 1

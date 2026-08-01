@@ -488,7 +488,6 @@ $("sound-pick").addEventListener("click", async () => {
   const action = actions.ensure(config, "sound");
   if (action.kind.type !== "sound") return;
 
-  const before = action.kind.paths.length;
   for (const path of chosen) {
     // Adding the same file twice would give it double the odds under random order, and
     // is never what was meant.
@@ -496,12 +495,6 @@ $("sound-pick").addEventListener("click", async () => {
   }
   pushConfig();
   renderActionPages();
-
-  // Play the first new one. The daemon logs decode failures somewhere nobody looks, and
-  // hearing it is the confirmation that matters.
-  if (action.kind.paths.length > before) {
-    setTimeout(() => void testAction("sound"), 400);
-  }
 });
 
 $("sound-order").addEventListener("change", (e) => {

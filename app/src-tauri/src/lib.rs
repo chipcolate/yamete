@@ -124,9 +124,12 @@ fn daemon_owned(supervisor: tauri::State<'_, Arc<supervisor::Supervisor>>) -> bo
 fn open_logs(app: tauri::AppHandle) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
     let dir = std::env::var("HOME")
-        .map(|h| format!("{h}/Library/Logs/yamete"))
+        .map(|h| std::path::PathBuf::from(h).join("Library/Logs/yamete"))
         .map_err(|e| e.to_string())?;
+    // Created on demand as well as at daemon start, so this can never open nothing —
+    // an empty folder at least says where the logs would be.
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     app.opener()
-        .open_path(dir, None::<&str>)
+        .open_path(dir.to_string_lossy().to_string(), None::<&str>)
         .map_err(|e| e.to_string())
 }

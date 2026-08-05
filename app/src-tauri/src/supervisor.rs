@@ -15,6 +15,7 @@
 //!   parent`; the pipe closes when this process dies for any reason, including a force
 //!   quit, so there is no path that leaves an orphaned daemon holding the sensor.
 
+use std::fs::File;
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -23,6 +24,32 @@ use std::time::{Duration, Instant};
 
 /// How long to wait for a freshly spawned daemon to start listening.
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Where the daemon's output goes.
+///
+/// Under launchd this was the plist's `StandardOutPath`. Owning the daemon ourselves
+/// means owning its logging too — without this the daemon's diagnostics (a sound that
+/// would not decode, a webhook that failed, a rejected config) go to `/dev/null`, and the
+/// tray's "Show logs" opens a directory that never gets created.
+fn log_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Logs/yamete"))
+}
+
+/// Open the log file for a fresh run, keeping the previous one alongside it.
+///
+/// One generation of rotation: enough to diagnose a crash after the fact, without the
+/// file growing without bound across restarts — and the app restarts the daemon every
+/// time it launches.
+fn open_log() -> Option<File> {
+    let dir = log_dir()?;
+    std::fs::create_dir_all(&dir).ok()?;
+
+    let current = dir.join("yamete.log");
+    if current.exists() {
+        let _ = std::fs::rename(&current, dir.join("yamete.log.1"));
+    }
+    File::create(current).ok()
+}
 
 /// The daemon process, if this app started one.
 pub struct Supervisor {
@@ -77,12 +104,23 @@ impl Supervisor {
         let path = Self::sidecar_path()
             .ok_or_else(|| "could not find the bundled yamete binary".to_string())?;
 
+        // Both streams go to the same file. `tracing` writes to stderr and the
+        // foreground-mode chatter to stdout; interleaving them is what someone reading
+        // the log actually wants.
+        let (out, err) = match open_log() {
+            Some(file) => match file.try_clone() {
+                Ok(second) => (Stdio::from(file), Stdio::from(second)),
+                Err(_) => (Stdio::from(file), Stdio::null()),
+            },
+            None => (Stdio::null(), Stdio::null()),
+        };
+
         let child = Command::new(&path)
             .args(["run", "--daemon", "--exit-with-parent"])
             // The pipe is the leash: yamete exits when it closes.
             .stdin(Stdio::piped())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(out)
+            .stderr(err)
             .spawn()
             .map_err(|e| format!("could not start {}: {e}", path.display()))?;
 

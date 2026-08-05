@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Spank",
   "version": "0.1.0",
-  "identifier": "com.chipcolate.spank.app",
+  "identifier": "com.chipcolate.spank",
   "build": {
     "beforeDevCommand": "bun run dev",
     "beforeBuildCommand": "bun run build",

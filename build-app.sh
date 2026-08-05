@@ -43,6 +43,33 @@ else
   echo "==> no signing identity found; the bundle will be ad-hoc signed"
 fi
 
+# Notarisation. Tauri runs notarytool and staples automatically when it finds credentials,
+# so this only has to establish whether they are present and say what is missing if not.
+#
+# Two accepted forms, checked in Apple's order of preference:
+#   App Store Connect API key — APPLE_API_ISSUER, APPLE_API_KEY, APPLE_API_KEY_PATH
+#   Apple ID                  — APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID
+NOTARIZE=no
+case "$APPLE_SIGNING_IDENTITY" in
+  "Developer ID Application:"*)
+    if [ -n "${APPLE_API_ISSUER:-}" ] && [ -n "${APPLE_API_KEY:-}" ]; then
+      NOTARIZE=yes
+      echo "==> notarising with an App Store Connect API key"
+    elif [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_PASSWORD:-}" ]; then
+      NOTARIZE=yes
+      echo "==> notarising with an Apple ID"
+    else
+      echo "==> Developer ID found but no notarisation credentials; skipping notarisation"
+      echo "    set APPLE_API_ISSUER + APPLE_API_KEY + APPLE_API_KEY_PATH,"
+      echo "    or APPLE_ID + APPLE_PASSWORD + APPLE_TEAM_ID"
+    fi
+    ;;
+  *)
+    # Only Developer ID certificates can be notarised at all; anything else would have
+    # the submission rejected, so there is nothing to warn about.
+    ;;
+esac
+
 echo "==> daemon"
 cargo build --release -p spankd
 
@@ -75,7 +102,34 @@ if ! (cd app && bun run tauri build); then
   (cd app && bun run tauri build)
 fi
 
+APP=app/src-tauri/target/release/bundle/macos/Spank.app
 DMG=$(ls -t app/src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1 || true)
+
+echo
+echo "==> verifying"
+# --deep --strict walks into the bundled daemon too; signing the outer app while leaving
+# the sidecar unsigned passes a shallow check and fails on another machine.
+if codesign --verify --deep --strict "$APP" 2>/dev/null; then
+  echo "    signature valid (app and sidecar)"
+else
+  echo "    SIGNATURE INVALID" >&2
+fi
+
+if [ "$NOTARIZE" = "yes" ]; then
+  if xcrun stapler validate "$APP" >/dev/null 2>&1; then
+    echo "    notarisation stapled"
+  else
+    echo "    NOT STAPLED — the ticket did not attach" >&2
+  fi
+fi
+
+# The real question for distribution: would Gatekeeper let someone else open this?
+if spctl -a -t exec "$APP" >/dev/null 2>&1; then
+  echo "    Gatekeeper: accepted — this will open on any Mac"
+else
+  echo "    Gatekeeper: rejected — fine for local use, blocked if downloaded elsewhere"
+fi
+
 echo
 if [ -n "$DMG" ]; then
   echo "Built $DMG"

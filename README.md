@@ -9,6 +9,15 @@ Bosch IMU behind the Sensor Processing Unit, invisible to CoreMotion, reachable 
 vendor-usage-page HID devices. Telling a slap apart from someone thumping the desk turns
 out to need the gyroscope, which is not where you would first look.
 
+## Requirements
+
+An Apple Silicon **laptop**, macOS 13 or later. The sensor exists on M2 and later, plus
+M1 Pro and M1 Max. It is absent from the M1 MacBook Pro (2020), the M1 Air, every desktop
+Mac, and every Intel Mac — `yamete probe` says so plainly rather than hanging.
+
+The first launch asks for **Input Monitoring**. macOS gates all HID access behind it,
+including a sensor that is not an input device in any useful sense.
+
 ## What's here
 
 | | |
@@ -20,19 +29,50 @@ out to need the gyroscope, which is not where you would first look.
 | `app/` | Yamete, the Tauri menu bar app |
 | `fixtures/` | 40 annotated slaps and 150 s of things that must stay silent |
 
+## How it fits together
+
+The daemon does everything real: reads the sensor, runs the detector, fires actions. The
+app is a controller that attaches over a unix socket.
+
+The app **bundles the daemon as a sidecar and owns its lifetime** — opening Yamete starts
+detection, quitting it stops detection. The daemon is spawned with a stdin pipe and
+`--exit-with-parent`, so the pipe closing kills it however the app dies, including a force
+quit. If a daemon is already running (a LaunchAgent, or one started from a terminal) the
+app attaches to it and leaves it alone on exit.
+
+| | |
+|---|---|
+| socket | `~/Library/Application Support/com.chipcolate.yamete/yamete.sock` |
+| config | `…/com.chipcolate.yamete/config.json` |
+| logs | `~/Library/Logs/yamete/yamete.log` (previous run kept as `.log.1`) |
+
+The protocol is newline-delimited JSON, so the daemon can be driven by hand:
+
+```sh
+nc -U ~/Library/Application\ Support/com.chipcolate.yamete/yamete.sock
+{"cmd":"get_status"}
+{"cmd":"subscribe","slaps":true}
+```
+
 ## Building
 
 ```sh
 ./build-app.sh
 ```
 
-Produces a signed `.app` and `.dmg`, then reports whether the signature is valid and
-whether Gatekeeper would accept it. Install by opening the DMG and dragging across.
+Produces a signed `.app` and `.dmg`, then reports whether the signature is valid, whether
+a notarisation ticket is stapled, and whether Gatekeeper would accept it. It deliberately
+does **not** install or launch anything — install by opening the DMG and dragging across.
 
 The script stages the daemon into the app bundle before building it. That order matters:
 the app spawns the bundled `yamete`, so building against a stale copy produces a bundle
 whose daemon rejects arguments the app passes it, and fails silently because the child
 exits before it can log anything.
+
+```sh
+cargo test --workspace     # unit tests plus a replay of the whole fixture corpus
+cd app && bun run tauri dev # the app against a live frontend, for UI work
+```
 
 ## Signing and notarisation
 
@@ -45,16 +85,18 @@ the sensor is tied to the signing identity, and an ad-hoc signature changes ever
 so macOS can re-prompt for permission after each rebuild.
 
 To produce something that opens on someone else's Mac you need a Developer ID certificate
-**and** notarisation credentials. Create the certificate at
+**and** notarisation credentials — a Developer ID signature alone is not enough, since
+Gatekeeper has also required a notarisation ticket from macOS 10.15 onwards. Create the
+certificate at
 [developer.apple.com → Certificates](https://developer.apple.com/account/resources/certificates)
-(*Developer ID Application*), download it, and double-click to install.
+(*Developer ID Application*, G2 Sub-CA), download it, and double-click to install.
 
 Then either an App Store Connect API key:
 
 ```sh
-export APPLE_API_ISSUER=...        # the issuer UUID
-export APPLE_API_KEY=...           # the key ID, e.g. ABC123DEF4
-export APPLE_API_KEY_PATH=~/private_keys/AuthKey_ABC123DEF4.p8
+export APPLE_API_ISSUER=...   # the issuer UUID
+export APPLE_API_KEY=...      # the key ID
+export APPLE_API_KEY_PATH=~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8
 ```
 
 or an Apple ID with an [app-specific password](https://appleid.apple.com):
@@ -62,11 +104,12 @@ or an Apple ID with an [app-specific password](https://appleid.apple.com):
 ```sh
 export APPLE_ID=you@example.com
 export APPLE_PASSWORD=abcd-efgh-ijkl-mnop
-export APPLE_TEAM_ID=HNF5BY9XXV
+export APPLE_TEAM_ID=XXXXXXXXXX
 ```
 
-`./build-app.sh` then notarises and staples, and the verification step reports
-`Gatekeeper: accepted`. Notarisation adds a few minutes to the build.
+The build then notarises and staples, and the verification step should report
+`Gatekeeper: accepted`. Both the app and the DMG are submitted, so that is two round trips
+to Apple; queue times vary from minutes to considerably longer.
 
 ## The daemon on its own
 
@@ -80,24 +123,29 @@ yamete listen           # stream detections as they happen
 yamete install --copy   # run it permanently as a LaunchAgent, independent of the app
 ```
 
-The app bundles its own copy and manages its lifetime, so a LaunchAgent is only needed if
-you want detection without the app running.
+A LaunchAgent is only needed if you want detection without the app running. It is a *user*
+agent rather than a system daemon, which is not merely simpler but necessary: Input
+Monitoring is a per-user GUI consent, and a root daemon has no login session to prompt in.
 
 ## Tuning
 
-Thresholds are derived from recordings, not guessed. The workflow:
+Thresholds are derived from recordings, not guessed. The obvious-looking values do not
+survive contact with the hardware: a 0.005 g micro-shock floor sits around the 95th
+percentile of an *idle* laptop, so a detector built on it fires on nothing but noise.
 
 ```sh
-yamete record-suite                      # record the corpus, with a metronome for slaps
-yamete analyze fixtures/idle.fixture.gz  # what the detectors read on a quiet machine
-yamete analyze fixtures/slap-*.gz --at-detections   # and at a real slap
-yamete sweep fixtures/*.gz --knob gyro-ratio        # score a threshold against everything
-yamete replay fixtures/*.gz -v           # what the current settings would do
+yamete record-suite                                # record the corpus, with a metronome
+yamete analyze fixtures/idle.fixture.gz            # what the detectors read when quiet
+yamete analyze fixtures/slap-*.gz --at-detections  # and at a real slap
+yamete sweep fixtures/*.gz --knob gyro-ratio       # score a threshold against everything
+yamete replay fixtures/*.gz -v                     # what the current settings would do
 ```
 
 `cargo test` replays the whole corpus and holds the detector to a measured envelope:
-everyday activity silent, false positives within budget, recall above target.
+everyday activity silent, false positives within budget, recall above target. The suite
+skips rather than fails when `fixtures/` is empty, so a fresh clone still passes.
 
-Thresholds are measured, not assumed. The obvious-looking values do not survive contact
-with the hardware: a 0.005 g micro-shock floor sits around the 95th percentile of an
-*idle* laptop, so a detector built on it fires on nothing but noise.
+`--at-detections` is the one worth knowing about. Percentiles over a whole recording are
+dominated by the quiet 98 % of it and say nothing about whether a threshold is *reachable*;
+sampling the detectors at the moment one fires is what tells you whether a statistic
+contributes at all.

@@ -31,12 +31,14 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         ],
     )?;
 
-    TrayIconBuilder::with_id("spank")
-        .icon(app.default_window_icon().cloned().ok_or_else(|| {
-            tauri::Error::AssetNotFound("no default window icon configured".into())
-        })?)
-        // A template image is tinted by macOS to match the menu bar, so it stays legible
-        // in both light and dark mode and while the bar is highlighted.
+    // Deliberately not the app icon. A template image is drawn from its alpha channel
+    // alone, so full-colour artwork on an opaque background renders as a featureless blob
+    // in the menu bar. This is a separate monochrome glyph, which is what lets macOS tint
+    // it correctly in light mode, dark mode, and while the bar is highlighted.
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray@2x.png"))?;
+
+    TrayIconBuilder::with_id("yamete")
+        .icon(icon)
         .icon_as_template(true)
         .tooltip("Yamete")
         .menu(&menu)

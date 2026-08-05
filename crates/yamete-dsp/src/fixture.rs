@@ -8,7 +8,7 @@
 //! The format is line-oriented text so fixtures diff sensibly in review:
 //!
 //! ```text
-//! # spank-fixture v1
+//! # yamete-fixture v1
 //! # label=slap-lid-left
 //! # expect=5
 //! # model=Mac16,5
@@ -24,7 +24,11 @@ use std::path::Path;
 
 use crate::detector::Frame;
 
-const MAGIC: &str = "# spank-fixture v1";
+const MAGIC: &str = "# yamete-fixture v1";
+
+/// The header this format used before the project was renamed. Still accepted on read so
+/// a trace recorded with an older build does not become unreadable.
+const LEGACY_MAGIC: &str = "# spank-fixture v1";
 const HEADER: &str = "s,t,x,y,z";
 
 /// Leading bytes of a gzip member.
@@ -184,7 +188,8 @@ impl Fixture {
     pub fn from_text(text: &str) -> Result<Self, ParseError> {
         let mut lines = text.lines().enumerate();
         let (_, first) = lines.next().ok_or(ParseError::BadMagic)?;
-        if first.trim() != MAGIC {
+        let header = first.trim();
+        if header != MAGIC && header != LEGACY_MAGIC {
             return Err(ParseError::BadMagic);
         }
 
@@ -298,7 +303,7 @@ mod tests {
     #[test]
     fn round_trips_through_gzip() {
         let fx = sample_fixture();
-        let dir = std::env::temp_dir().join(format!("spank-gz-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-gz-{}", std::process::id()));
         let path = dir.join("x.fixture.gz");
         fx.write(&path).unwrap();
 
@@ -317,7 +322,7 @@ mod tests {
     #[test]
     fn reads_plain_and_gzipped_alike() {
         let fx = sample_fixture();
-        let dir = std::env::temp_dir().join(format!("spank-both-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-both-{}", std::process::id()));
         fx.write(dir.join("a.fixture")).unwrap();
         fx.write(dir.join("b.fixture.gz")).unwrap();
 
@@ -333,6 +338,14 @@ mod tests {
     fn reading_a_missing_file_reports_the_path() {
         let err = Fixture::read("/nonexistent/x.fixture.gz").unwrap_err();
         assert!(err.to_string().contains("x.fixture.gz"), "{err}");
+    }
+
+    #[test]
+    fn a_fixture_from_before_the_rename_still_loads() {
+        let text = format!("{LEGACY_MAGIC}\n# label=old\n{HEADER}\na,0.0,0,0,-1\n");
+        let fx = Fixture::from_text(&text).unwrap();
+        assert_eq!(fx.label, "old");
+        assert_eq!(fx.accel.len(), 1);
     }
 
     #[test]

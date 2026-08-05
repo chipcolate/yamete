@@ -628,7 +628,7 @@ mod tests {
 
     #[test]
     fn sequential_order_walks_the_list_and_wraps() {
-        let dir = std::env::temp_dir().join(format!("spank-seq-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-seq-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let files: Vec<PathBuf> = ["a.wav", "b.wav", "c.wav"]
             .iter()
@@ -656,7 +656,7 @@ mod tests {
 
     #[test]
     fn random_order_covers_the_list_without_immediate_repeats() {
-        let dir = std::env::temp_dir().join(format!("spank-rand-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-rand-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let files: Vec<PathBuf> = ["a.wav", "b.wav", "c.wav", "d.wav"]
             .iter()
@@ -691,7 +691,7 @@ mod tests {
 
     #[test]
     fn a_single_sound_ignores_the_order() {
-        let dir = std::env::temp_dir().join(format!("spank-one-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-one-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let only = dir.join("only.wav");
         std::fs::write(&only, b"x").unwrap();
@@ -713,7 +713,7 @@ mod tests {
 
     #[test]
     fn the_playlist_flattens_directories_and_drops_duplicates() {
-        let dir = std::env::temp_dir().join(format!("spank-pl-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-pl-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         for n in ["a.mp3", "b.wav"] {
             std::fs::write(dir.join(n), b"x").unwrap();
@@ -732,7 +732,7 @@ mod tests {
 
     #[test]
     fn resolving_a_directory_finds_audio_and_sorts_it() {
-        let dir = std::env::temp_dir().join(format!("spank-sounds-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-sounds-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         for name in ["b.wav", "a.mp3", "notes.txt"] {
             std::fs::write(dir.join(name), b"x").unwrap();

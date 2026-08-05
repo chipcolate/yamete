@@ -1,24 +1,26 @@
 //! Detector tuning parameters.
 //!
-//! The reference implementations (MacSlapApp, taigrr/spank) publish threshold constants —
-//! 0.005 g for a micro shock, an STA/LTA ratio of 4, and so on. Measured against 20 s of
-//! genuinely idle recording on an M4 Max, **every one of those sits below this machine's
-//! noise floor**: the envelope alone reaches 0.0159 g at rest and STA/LTA touches 8.3.
-//! Adopting them verbatim produces a detector that fires on nothing but noise.
+//! Every threshold here was derived from measurement on real hardware, not adopted from
+//! anywhere. That is worth stating because the obvious-sounding numbers do not work: a
+//! micro-shock floor of 0.005 g or an STA/LTA ratio of 4 both sit *below* this machine's
+//! noise floor, where the envelope alone reaches 0.0159 g at rest and STA/LTA touches 8.3
+//! while the laptop is untouched. Either would produce a detector that fires on nothing
+//! but noise.
 //!
-//! So the defaults below are derived from measurement instead, set roughly 2× above the
-//! observed idle maximum of each statistic. `yamete analyze` on a fixture annotated
-//! `expect=0` prints those maxima and flags any threshold that falls under one, which is
-//! how to re-derive these for a different machine or a noisier desk.
+//! The defaults below sit roughly 2× above the observed idle maximum of each statistic.
+//! `yamete analyze` on a fixture annotated `expect=0` prints those maxima and flags any
+//! threshold that falls under one, which is how to re-derive them for a different machine
+//! or a noisier desk.
 
 use serde::{Deserialize, Serialize};
 
 /// How the gyroscope is allowed to influence detection.
 ///
 /// A slap on the lid imparts angular rate about the hinge; typing, trackpad clicks and
-/// desk bumps largely produce linear acceleration without it. No reference project uses
-/// the gyro at all — and on the recorded corpus it is the *only* feature that separates a
-/// slap from a knock on the desk, so `Require` is the default.
+/// desk bumps largely produce linear acceleration without it. On the recorded corpus it
+/// is the *only* feature that separates a slap from a knock on the desk — peak amplitude
+/// does not, since bumps are frequently the larger of the two — so `Require` is the
+/// default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum GyroMode {
@@ -85,11 +87,10 @@ impl Default for Thresholds {
 
 /// Peak amplitude bands for each severity tier.
 ///
-/// The reference implementations gate tiers on *vote count* — 4+ detectors for a major
-/// shock, 3+ for medium. Measured against real slaps that turns out to be the wrong axis:
-/// the detectors are a confidence signal ("is this an impact at all?"), while severity is
-/// simply how hard the machine was hit. Gating on votes meant a 0.62 g whack that only
-/// tripped two detectors was reported as a micro shock, which is plainly wrong.
+/// Severity is amplitude alone. Gating it on how many detectors agreed is tempting and
+/// wrong: the detectors answer "is this an impact at all?", not "how hard was it". When
+/// tiers were gated on votes, a measured 0.62 g whack that happened to trip only two
+/// detectors came back as a micro shock.
 ///
 /// So tiers are amplitude only, and confidence lives in [`Config::min_votes`]. Bands are
 /// set from the recorded corpus, where slap peaks span 0.04 g to 0.62 g.

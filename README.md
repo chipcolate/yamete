@@ -7,7 +7,7 @@ Slap detection for Apple Silicon MacBooks. Hit the laptop, it makes a noise.
 The interesting part is that it works at all: the sensor it reads is an undocumented
 Bosch IMU behind the Sensor Processing Unit, invisible to CoreMotion, reachable only as
 vendor-usage-page HID devices. Telling a slap apart from someone thumping the desk turns
-out to need the gyroscope, which no comparable project uses.
+out to need the gyroscope, which is not where you would first look.
 
 ## What's here
 
@@ -98,6 +98,6 @@ yamete replay fixtures/*.gz -v           # what the current settings would do
 `cargo test` replays the whole corpus and holds the detector to a measured envelope:
 everyday activity silent, false positives within budget, recall above target.
 
-The published thresholds from comparable projects all sit **below** this machine's noise
-floor — their 0.005 g micro-shock floor is around the 95th percentile of an idle laptop —
-which is why none of them were adopted as-is.
+Thresholds are measured, not assumed. The obvious-looking values do not survive contact
+with the hardware: a 0.005 g micro-shock floor sits around the 95th percentile of an
+*idle* laptop, so a detector built on it fires on nothing but noise.

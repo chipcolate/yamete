@@ -1,9 +1,9 @@
 //! `yamete analyze` — report the signal distribution in a fixture.
 //!
-//! Threshold defaults inherited from the reference projects are not necessarily right for
-//! this machine: a micro-shock floor of 0.005 g is meaningless if the idle noise floor is
-//! already 0.006 g. This command measures the distribution so thresholds can be set from
-//! data instead of from another project's constants.
+//! A threshold is only meaningful relative to what the machine does when untouched: a
+//! micro-shock floor of 0.005 g is useless if the idle noise floor is already 0.006 g.
+//! This measures the distribution so thresholds can be set from data rather than
+//! guessed.
 
 use std::path::PathBuf;
 

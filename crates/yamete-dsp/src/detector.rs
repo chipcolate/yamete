@@ -469,8 +469,8 @@ impl Detector {
 
 /// Map peak amplitude to a 0..1 intensity on a log scale.
 ///
-/// Linear amplitude maps poorly to perceived loudness; this is the same curve the
-/// reference implementations use, `log(1 + 99t) / log(100)`.
+/// Linear amplitude maps poorly to perceived loudness, so this is logarithmic:
+/// `log(1 + 99t) / log(100)`.
 #[inline]
 pub fn intensity_for(peak_g: f32, full_scale_g: f32) -> f32 {
     let t = (peak_g / full_scale_g.max(1e-6)).clamp(0.0, 1.0);

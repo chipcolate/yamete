@@ -69,7 +69,7 @@ fn traces(fixture: &yamete_dsp::Fixture, cfg: Config) -> Traces {
     t
 }
 
-fn report(name: &str, values: &mut Vec<f32>, unit: &str) {
+fn report(name: &str, values: &mut [f32], unit: &str) {
     values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     println!(
         "  {name:<10} p50 {:.5}  p95 {:.5}  p99 {:.5}  p99.9 {:.5}  max {:.5} {unit}",
@@ -141,11 +141,27 @@ pub fn at_detections(files: &[PathBuf]) -> Result<(), Error> {
     };
     println!("\n  Fraction of real slaps that trip each detector at its current threshold:");
     let checks: [(&str, f32, Vec<f32>); 5] = [
-        ("envelope", th.highpass_g, rows.iter().map(|r| r.1.envelope).collect()),
-        ("sta/lta", th.sta_lta, rows.iter().map(|r| r.1.sta_lta).collect()),
+        (
+            "envelope",
+            th.highpass_g,
+            rows.iter().map(|r| r.1.envelope).collect(),
+        ),
+        (
+            "sta/lta",
+            th.sta_lta,
+            rows.iter().map(|r| r.1.sta_lta).collect(),
+        ),
         ("cusum", th.cusum, rows.iter().map(|r| r.1.cusum).collect()),
-        ("kurtosis", th.kurtosis, rows.iter().map(|r| r.1.kurtosis).collect()),
-        ("peak/mad", th.peak_mad, rows.iter().map(|r| r.1.peak_mad).collect()),
+        (
+            "kurtosis",
+            th.kurtosis,
+            rows.iter().map(|r| r.1.kurtosis).collect(),
+        ),
+        (
+            "peak/mad",
+            th.peak_mad,
+            rows.iter().map(|r| r.1.peak_mad).collect(),
+        ),
     ];
     for (name, threshold, values) in checks {
         let hit = values.iter().filter(|v| **v >= threshold).count();
@@ -156,12 +172,15 @@ pub fn at_detections(files: &[PathBuf]) -> Result<(), Error> {
             quantile(values.clone(), 0.25),
             quantile(values.clone(), 0.50),
             quantile(values.clone(), 0.75),
-            if pct < 25.0 { "  <- effectively never votes" } else { "" },
+            if pct < 25.0 {
+                "  <- effectively never votes"
+            } else {
+                ""
+            },
         );
     }
 
-    let avg_votes: f64 =
-        rows.iter().map(|r| f64::from(r.1.votes)).sum::<f64>() / rows.len() as f64;
+    let avg_votes: f64 = rows.iter().map(|r| f64::from(r.1.votes)).sum::<f64>() / rows.len() as f64;
     println!("\n  Mean votes per real slap: {avg_votes:.1} of 5");
     println!(
         "  min_votes is {}, so a slap needs that many detectors to register at all. \

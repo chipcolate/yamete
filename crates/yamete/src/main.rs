@@ -3,9 +3,9 @@ use std::process::ExitCode;
 
 mod actions;
 mod analyze;
-mod daemon;
 mod calibrate;
 mod client;
+mod daemon;
 mod launchd;
 mod probe;
 mod pump;
@@ -19,7 +19,11 @@ mod watch;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "yamete", version, about = "Slap detection for Apple Silicon MacBooks")]
+#[command(
+    name = "yamete",
+    version,
+    about = "Slap detection for Apple Silicon MacBooks"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -170,7 +174,9 @@ enum Command {
 fn init_logging(as_daemon: bool) {
     use tracing_subscriber::EnvFilter;
     let filter = EnvFilter::try_from_env("SPANK_LOG").unwrap_or_else(|_| EnvFilter::new("info"));
-    let builder = tracing_subscriber::fmt().with_env_filter(filter).with_writer(std::io::stderr);
+    let builder = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr);
     if as_daemon {
         builder.with_ansi(false).init();
     } else {

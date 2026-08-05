@@ -192,8 +192,9 @@ fn replace_binary(from: &Path, to: &Path) -> Result<(), Error> {
     })?;
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(to, std::fs::Permissions::from_mode(0o755))
-            .map_err(|e| Error::Iokit(format!("could not make {} executable: {e}", to.display())))?;
+        std::fs::set_permissions(to, std::fs::Permissions::from_mode(0o755)).map_err(|e| {
+            Error::Iokit(format!("could not make {} executable: {e}", to.display()))
+        })?;
     }
     Ok(())
 }
@@ -304,7 +305,11 @@ pub fn restart() -> Result<(), Error> {
 /// Report what launchd knows, for when the daemon is not behaving.
 pub fn show() -> Result<(), Error> {
     let path = plist_path();
-    println!("plist    {} ({})", path.display(), if path.exists() { "present" } else { "missing" });
+    println!(
+        "plist    {} ({})",
+        path.display(),
+        if path.exists() { "present" } else { "missing" }
+    );
     println!("loaded   {}", if is_loaded() { "yes" } else { "no" });
 
     match launchctl(&["print", &service_target()]) {
@@ -353,8 +358,14 @@ mod tests {
         assert!(text.contains("<string>--daemon</string>"));
         assert!(text.contains("/tmp/logs/yamete.log"));
         // Balanced tags — an unbalanced plist loads as garbage or not at all.
-        assert_eq!(text.matches("<dict>").count(), text.matches("</dict>").count());
-        assert_eq!(text.matches("<array>").count(), text.matches("</array>").count());
+        assert_eq!(
+            text.matches("<dict>").count(),
+            text.matches("</dict>").count()
+        );
+        assert_eq!(
+            text.matches("<array>").count(),
+            text.matches("</array>").count()
+        );
     }
 
     #[test]
@@ -376,7 +387,10 @@ mod tests {
             Path::new("/Users/tom & jerry/bin/yamete"),
             Path::new("/Users/tom & jerry/logs"),
         );
-        assert!(text.contains("tom &amp; jerry"), "unescaped ampersand would break the plist");
+        assert!(
+            text.contains("tom &amp; jerry"),
+            "unescaped ampersand would break the plist"
+        );
         assert!(!text.contains("tom & jerry"));
     }
 
@@ -409,7 +423,14 @@ mod tests {
 
         // And the values survive a round trip through the real parser.
         let label = Command::new("/usr/bin/plutil")
-            .args(["-extract", "Label", "raw", "-o", "-", &tmp.to_string_lossy()])
+            .args([
+                "-extract",
+                "Label",
+                "raw",
+                "-o",
+                "-",
+                &tmp.to_string_lossy(),
+            ])
             .output()
             .unwrap();
         assert_eq!(String::from_utf8_lossy(&label.stdout).trim(), LABEL);
@@ -453,7 +474,10 @@ mod tests {
         replace_binary(&src, &dir.join("yamete")).unwrap();
         assert!(dir.join("yamete").exists());
         std::fs::remove_file(&src).ok();
-        std::fs::remove_dir_all(std::env::temp_dir().join(format!("spank-mk-{}", std::process::id()))).ok();
+        std::fs::remove_dir_all(
+            std::env::temp_dir().join(format!("spank-mk-{}", std::process::id())),
+        )
+        .ok();
     }
 
     #[test]

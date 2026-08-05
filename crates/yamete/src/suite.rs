@@ -159,7 +159,13 @@ pub fn run(dir: &Path, only: Option<&str>) -> Result<(), Error> {
          `# expect=` line at the top of that fixture — the count is the assertion."
     );
     println!("\nNow check them with:");
-    println!("  cargo run -p yamete -- replay {}/*.fixture.gz -v", dir.display());
-    println!("  cargo run -p yamete -- analyze {}/idle.fixture.gz", dir.display());
+    println!(
+        "  cargo run -p yamete -- replay {}/*.fixture.gz -v",
+        dir.display()
+    );
+    println!(
+        "  cargo run -p yamete -- analyze {}/idle.fixture.gz",
+        dir.display()
+    );
     Ok(())
 }

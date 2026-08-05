@@ -37,9 +37,7 @@ impl Cue {
             return vec![lead_in + span / 2.0];
         }
         let step = span / (self.count - 1) as f64;
-        (0..self.count)
-            .map(|i| lead_in + step * i as f64)
-            .collect()
+        (0..self.count).map(|i| lead_in + step * i as f64).collect()
     }
 }
 

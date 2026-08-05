@@ -8,10 +8,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use yamete_proto::{to_line, DaemonConfig, Event, Request, Status};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
 use tokio::sync::{broadcast, mpsc, watch};
+use yamete_proto::{to_line, DaemonConfig, Event, Request, Status};
 
 /// Shared handles the socket server needs to talk to the detector loop.
 #[derive(Clone)]
@@ -308,7 +308,9 @@ mod tests {
         let (mut sub, _) = subscription();
         sub.set(true, true);
         assert!(!sub.wants(&Event::Pong));
-        assert!(!sub.wants(&Event::Error { message: "x".into() }));
+        assert!(!sub.wants(&Event::Error {
+            message: "x".into()
+        }));
         assert!(!sub.wants(&Event::Config {
             config: Box::new(DaemonConfig::default())
         }));
@@ -398,7 +400,12 @@ mod tests {
         }
     }
 
-    async fn connect(h: &Harness) -> (tokio::io::Lines<BufReader<tokio::net::unix::OwnedReadHalf>>, tokio::net::unix::OwnedWriteHalf) {
+    async fn connect(
+        h: &Harness,
+    ) -> (
+        tokio::io::Lines<BufReader<tokio::net::unix::OwnedReadHalf>>,
+        tokio::net::unix::OwnedWriteHalf,
+    ) {
         let stream = UnixStream::connect(&h.path).await.unwrap();
         let (r, w) = stream.into_split();
         (BufReader::new(r).lines(), w)
@@ -406,7 +413,9 @@ mod tests {
 
     async fn ask(h: &Harness, request: &str) -> Event {
         let (mut lines, mut w) = connect(h).await;
-        w.write_all(format!("{request}\n").as_bytes()).await.unwrap();
+        w.write_all(format!("{request}\n").as_bytes())
+            .await
+            .unwrap();
         let line = tokio::time::timeout(Duration::from_secs(2), lines.next_line())
             .await
             .expect("timed out waiting for a reply")
@@ -424,7 +433,10 @@ mod tests {
         tokio::spawn(serve(listener, h.shared.clone()));
 
         assert!(matches!(ask(&h, r#"{"cmd":"ping"}"#).await, Event::Pong));
-        assert!(matches!(ask(&h, r#"{"cmd":"get_config"}"#).await, Event::Config { .. }));
+        assert!(matches!(
+            ask(&h, r#"{"cmd":"get_config"}"#).await,
+            Event::Config { .. }
+        ));
 
         match ask(&h, r#"{"cmd":"get_status"}"#).await {
             Event::Status(s) => {
@@ -513,7 +525,12 @@ mod tests {
         let listener = bind(&h.path).await.unwrap();
         tokio::spawn(serve(listener, h.shared.clone()));
 
-        match ask(&h, r#"{"cmd":"set_config","config":{"detector":{"sensitivity":9.0}}}"#).await {
+        match ask(
+            &h,
+            r#"{"cmd":"set_config","config":{"detector":{"sensitivity":9.0}}}"#,
+        )
+        .await
+        {
             Event::Error { message } => assert!(message.contains("sensitivity"), "{message}"),
             other => panic!("expected an error, got {other:?}"),
         }
@@ -533,20 +550,25 @@ mod tests {
         tokio::spawn(serve(listener, h.shared.clone()));
 
         let (mut lines, mut w) = connect(&h).await;
-        w.write_all(b"{\"cmd\":\"subscribe\",\"slaps\":true}\n").await.unwrap();
+        w.write_all(b"{\"cmd\":\"subscribe\",\"slaps\":true}\n")
+            .await
+            .unwrap();
 
         // Give the connection task a moment to register the subscription.
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(h.shared.telemetry_subscribers.load(Ordering::Relaxed), 0);
 
         // Telemetry must not arrive; the slap that follows it must.
-        let _ = h.shared.events.send(Event::Telemetry(yamete_proto::Telemetry {
-            t: 0.0,
-            envelope: vec![],
-            gyro: vec![],
-            scores: Default::default(),
-            dropped: 0,
-        }));
+        let _ = h
+            .shared
+            .events
+            .send(Event::Telemetry(yamete_proto::Telemetry {
+                t: 0.0,
+                envelope: vec![],
+                gyro: vec![],
+                scores: Default::default(),
+                dropped: 0,
+            }));
         let _ = h.shared.events.send(slap_event());
 
         let line = tokio::time::timeout(Duration::from_secs(2), lines.next_line())
@@ -567,7 +589,9 @@ mod tests {
 
         {
             let (_lines, mut w) = connect(&h).await;
-            w.write_all(b"{\"cmd\":\"subscribe\",\"telemetry\":true}\n").await.unwrap();
+            w.write_all(b"{\"cmd\":\"subscribe\",\"telemetry\":true}\n")
+                .await
+                .unwrap();
             tokio::time::sleep(Duration::from_millis(50)).await;
             assert_eq!(h.shared.telemetry_subscribers.load(Ordering::Relaxed), 1);
         }
@@ -586,7 +610,9 @@ mod tests {
         tokio::spawn(serve(listener, h.shared.clone()));
 
         let (mut lines, mut w) = connect(&h).await;
-        w.write_all(b"this is not json\n\n{\"cmd\":\"ping\"}\n").await.unwrap();
+        w.write_all(b"this is not json\n\n{\"cmd\":\"ping\"}\n")
+            .await
+            .unwrap();
 
         let first = lines.next_line().await.unwrap().unwrap();
         assert!(first.contains("error"), "got {first}");
@@ -602,7 +628,7 @@ mod tests {
         let h = harness("status");
         let listener = bind(&h.path).await.unwrap();
         tokio::spawn(serve(listener, h.shared.clone()));
-        let mut status_rx = h.status_rx.clone();
+        let status_rx = h.status_rx.clone();
 
         h.shared
             .status

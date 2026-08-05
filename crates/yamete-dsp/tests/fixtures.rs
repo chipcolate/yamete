@@ -49,12 +49,16 @@ fn load_all() -> Vec<(String, Fixture)> {
                 .is_some_and(|n| n.ends_with(".fixture") || n.ends_with(".fixture.gz"))
         })
         .map(|p| {
-            let fx = Fixture::read(&p)
-                .unwrap_or_else(|e| panic!("could not load {}: {e}", p.display()));
+            let fx =
+                Fixture::read(&p).unwrap_or_else(|e| panic!("could not load {}: {e}", p.display()));
             let name = p
                 .file_name()
                 .and_then(|n| n.to_str())
-                .map(|n| n.trim_end_matches(".gz").trim_end_matches(".fixture").trim_end_matches('.'))
+                .map(|n| {
+                    n.trim_end_matches(".gz")
+                        .trim_end_matches(".fixture")
+                        .trim_end_matches('.')
+                })
                 .unwrap_or_default()
                 .to_string();
             (name, fx)
@@ -250,9 +254,13 @@ fn sensitivity_is_monotonic_over_real_data() {
         prev = Some((s, total));
     }
 
-    let (_, lowest) = (0, corpus.iter().map(|(_, fx)| {
-        detect(fx, Config::default().with_sensitivity(0.0)).len()
-    }).sum::<usize>());
+    let (_, lowest) = (
+        0,
+        corpus
+            .iter()
+            .map(|(_, fx)| detect(fx, Config::default().with_sensitivity(0.0)).len())
+            .sum::<usize>(),
+    );
     let highest: usize = corpus
         .iter()
         .map(|(_, fx)| detect(fx, Config::default().with_sensitivity(1.0)).len())
@@ -278,7 +286,9 @@ fn typing_never_fires_at_any_sensitivity() {
             hits.is_empty(),
             "typing produced {} detection(s) at sensitivity {s:.1}: {:?}",
             hits.len(),
-            hits.iter().map(|h| (h.t, h.peak_g, h.gyro_ratio)).collect::<Vec<_>>(),
+            hits.iter()
+                .map(|h| (h.t, h.peak_g, h.gyro_ratio))
+                .collect::<Vec<_>>(),
         );
     }
 }

@@ -112,7 +112,9 @@ pub fn run(files: &[PathBuf], knob: Knob) -> Result<(), Error> {
     }
 
     if corpus.is_empty() {
-        return Err(Error::Iokit("no annotated fixtures to sweep against".into()));
+        return Err(Error::Iokit(
+            "no annotated fixtures to sweep against".into(),
+        ));
     }
 
     let total_slaps: usize = corpus
@@ -129,15 +131,26 @@ pub fn run(files: &[PathBuf], knob: Knob) -> Result<(), Error> {
         corpus.len(),
         total_slaps
     );
-    println!("  {:>10}   {:>7}   {:>7}   {:>7}   {}", knob.label(), "hits", "missed", "false+", "worst offenders");
-    println!("  {:->10}   {:->7}   {:->7}   {:->7}   {:->30}", "", "", "", "", "");
+    println!(
+        "  {:>10}   {:>7}   {:>7}   {:>7}   worst offenders",
+        knob.label(),
+        "hits",
+        "missed",
+        "false+"
+    );
+    println!(
+        "  {:->10}   {:->7}   {:->7}   {:->7}   {:->30}",
+        "", "", "", "", ""
+    );
 
     let mut best: Option<(f32, usize, usize)> = None;
 
     for value in knob.values() {
-        let mut cfg = Config::default();
         // The gyro gate only has an effect when it is allowed to suppress.
-        cfg.gyro_mode = GyroMode::Require;
+        let mut cfg = Config {
+            gyro_mode: GyroMode::Require,
+            ..Config::default()
+        };
         knob.apply(&mut cfg, value);
 
         let (mut hits, mut missed, mut false_pos) = (0usize, 0usize, 0usize);
@@ -168,7 +181,7 @@ pub fn run(files: &[PathBuf], knob: Knob) -> Result<(), Error> {
         // that fires when you didn't hit it is more annoying than one that occasionally
         // misses a gentle tap.
         let errors = missed + false_pos;
-        if best.is_none_or(|(_, be, bf)| errors < be || (errors == be && false_pos < bf)) {
+        if !best.is_some_and(|(_, be, bf)| errors < be || (errors == be && false_pos < bf)) {
             best = Some((value, errors, false_pos));
         }
 

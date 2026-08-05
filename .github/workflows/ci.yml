@@ -1,0 +1,69 @@
+name: CI
+
+# Fast checks on every push to the default branch and every PR targeting it.
+#
+# Everything runs on macOS and there is no cross-platform matrix to be had: the sensor
+# crate links IOKit, so the workspace does not even compile elsewhere.
+#
+# The unsigned app BUNDLE is built here, not just `cargo check`. Bundling is the only
+# thing that exercises tauri.conf.json, the capability set, the icon list and the sidecar
+# staging — none of which the compiler sees. A break in any of them otherwise reaches main
+# and surfaces during a release that also cuts a GitHub Release. Signing and notarisation
+# stay out of CI; they need the certificate and are release-only.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    # A native arm64 runner. The target is Apple Silicon only — the IMU does not exist on
+    # Intel Macs — so there is nothing to gain from an x86_64 leg.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # Replays the recorded fixture corpus as well as the unit tests, holding the
+      # detector to a measured envelope: everyday activity silent, false positives within
+      # budget, recall above target.
+      - name: Test
+        run: cargo test --workspace
+
+      - name: Install frontend deps
+        working-directory: app
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck frontend
+        working-directory: app
+        run: bunx tsc --noEmit
+
+      # No signing identity in the keychain, so build-app.sh falls back to ad-hoc and
+      # skips notarisation on its own. Its verification step still runs, which is what
+      # catches an unsigned nested binary before a release does.
+      - name: Build the app bundle (unsigned)
+        run: ./build-app.sh

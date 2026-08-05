@@ -176,11 +176,7 @@ impl Fixture {
             } else {
                 ("g", g.next().unwrap())
             };
-            let _ = writeln!(
-                out,
-                "{tag},{:.6},{:.5},{:.5},{:.5}",
-                f.t, f.x, f.y, f.z
-            );
+            let _ = writeln!(out, "{tag},{:.6},{:.5},{:.5},{:.5}", f.t, f.x, f.y, f.z);
         }
         out
     }
@@ -216,11 +212,15 @@ impl Fixture {
 
             let mut parts = line.split(',');
             let mut next = |line: usize| -> Result<&str, ParseError> {
-                parts.next().ok_or(ParseError::FieldCount { line, found: 0 })
+                parts
+                    .next()
+                    .ok_or(ParseError::FieldCount { line, found: 0 })
             };
             let tag = next(line_no)?.to_string();
             let mut num = |line: usize| -> Result<f64, ParseError> {
-                let raw = parts.next().ok_or(ParseError::FieldCount { line, found: 0 })?;
+                let raw = parts
+                    .next()
+                    .ok_or(ParseError::FieldCount { line, found: 0 })?;
                 raw.parse::<f64>().map_err(|_| ParseError::BadNumber {
                     line,
                     value: raw.to_string(),
@@ -258,10 +258,25 @@ mod tests {
         fx.expect = Some(3);
         fx.meta.insert("model".into(), "Mac16,5".into());
         fx.accel = vec![
-            Frame { t: 0.0, x: 0.0051, y: 0.0061, z: -0.9974 },
-            Frame { t: 0.00124, x: 0.0053, y: 0.0060, z: -0.9970 },
+            Frame {
+                t: 0.0,
+                x: 0.0051,
+                y: 0.0061,
+                z: -0.9974,
+            },
+            Frame {
+                t: 0.00124,
+                x: 0.0053,
+                y: 0.0060,
+                z: -0.9970,
+            },
         ];
-        fx.gyro = vec![Frame { t: 0.0006, x: 0.2441, y: 0.0, z: -0.061 }];
+        fx.gyro = vec![Frame {
+            t: 0.0006,
+            x: 0.2441,
+            y: 0.0,
+            z: -0.061,
+        }];
         fx
     }
 
@@ -272,7 +287,10 @@ mod tests {
 
         assert_eq!(parsed.label, "slap-lid-left");
         assert_eq!(parsed.expect, Some(3));
-        assert_eq!(parsed.meta.get("model").map(String::as_str), Some("Mac16,5"));
+        assert_eq!(
+            parsed.meta.get("model").map(String::as_str),
+            Some("Mac16,5")
+        );
         assert_eq!(parsed.accel.len(), 2);
         assert_eq!(parsed.gyro.len(), 1);
         assert!((parsed.accel[0].z - (-0.9974)).abs() < 1e-5);
@@ -295,9 +313,18 @@ mod tests {
     fn computes_rate_from_the_recording() {
         let mut fx = Fixture::new("x");
         fx.accel = (0..805)
-            .map(|i| Frame { t: f64::from(i) / 805.0, x: 0.0, y: 0.0, z: -1.0 })
+            .map(|i| Frame {
+                t: f64::from(i) / 805.0,
+                x: 0.0,
+                y: 0.0,
+                z: -1.0,
+            })
             .collect();
-        assert!((fx.rate_hz() - 805.0).abs() < 2.0, "rate = {}", fx.rate_hz());
+        assert!(
+            (fx.rate_hz() - 805.0).abs() < 2.0,
+            "rate = {}",
+            fx.rate_hz()
+        );
     }
 
     #[test]

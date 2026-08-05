@@ -9,10 +9,10 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use tokio::sync::{broadcast, mpsc, watch};
 use yamete_dsp::Detector;
 use yamete_proto::{DaemonConfig, Event, Slap, Status, Telemetry};
 use yamete_sensor::{Error, Imu};
-use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::actions::Executor;
 use crate::pump::{Pump, Source};
@@ -283,10 +283,7 @@ fn detector_loop(
 
         if want_telemetry && last_telemetry.elapsed() >= TELEMETRY_INTERVAL {
             last_telemetry = Instant::now();
-            let dropped = imu
-                .accel_stats()
-                .dropped
-                .load(Ordering::Relaxed);
+            let dropped = imu.accel_stats().dropped.load(Ordering::Relaxed);
             let _ = events.send(Event::Telemetry(Telemetry {
                 t: last_t,
                 envelope: std::mem::take(&mut envelope),
@@ -360,9 +357,13 @@ mod tests {
     #[test]
     fn telemetry_frames_are_bounded() {
         // At 805 Hz a 16 ms frame is ~13 samples; the cap only matters if the loop stalls,
-        // and exists so a stall cannot turn into an unbounded allocation.
-        assert!(MAX_TELEMETRY_SAMPLES >= 32);
+        // and exists so a stall cannot turn into an unbounded allocation. It therefore has
+        // to sit comfortably above a normal frame, or it would silently truncate the scope.
         let expected = 805.0 * TELEMETRY_INTERVAL.as_secs_f64();
+        assert!(
+            MAX_TELEMETRY_SAMPLES as f64 > expected * 2.0,
+            "the cap leaves no headroom above a normal {expected:.0}-sample frame"
+        );
         assert!(
             expected < MAX_TELEMETRY_SAMPLES as f64,
             "normal operation would hit the cap and truncate the scope"

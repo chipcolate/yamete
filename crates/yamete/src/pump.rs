@@ -73,13 +73,16 @@ impl Pump {
             }
             .expect("match arm guarantees the slot is occupied");
 
-            on_frame(take, self.to_frame(sample));
+            on_frame(take, self.stamp(sample));
             emitted += 1;
         }
         emitted
     }
 
-    fn to_frame(&mut self, s: Sample) -> Frame {
+    /// Stamp a sample with its time since the stream started.
+    ///
+    /// Takes `&mut self` because the first sample establishes the timebase origin.
+    fn stamp(&mut self, s: Sample) -> Frame {
         Frame {
             t: self.timebase.seconds_since_start(s.host_time),
             x: s.x,

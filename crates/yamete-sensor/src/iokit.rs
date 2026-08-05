@@ -16,8 +16,8 @@ use std::sync::Arc;
 use dispatch2::{DispatchQueue, DispatchRetained};
 use objc2_core_foundation::{CFDictionary, CFNumber, CFRetained, CFString, CFType};
 use objc2_io_kit::{
-    kIOMainPortDefault, IOHIDDevice, IOObjectRelease, IORegistryEntryCreateCFProperty,
-    IOServiceMatching, IOIteratorNext, IORegistryEntrySetCFProperty,
+    kIOMainPortDefault, IOHIDDevice, IOIteratorNext, IOObjectRelease,
+    IORegistryEntryCreateCFProperty, IORegistryEntrySetCFProperty, IOServiceMatching,
 };
 
 use crate::report::{self, Sample, REPORT_LEN};
@@ -267,7 +267,9 @@ unsafe extern "C-unwind" fn input_report_callback(
     if let Some(prev) = ctx.last_seq {
         let missed = report::gap(prev, sample.seq);
         if missed > 0 {
-            ctx.stats.dropped.fetch_add(u64::from(missed), Ordering::Relaxed);
+            ctx.stats
+                .dropped
+                .fetch_add(u64::from(missed), Ordering::Relaxed);
         }
     }
     ctx.last_seq = Some(sample.seq);
@@ -320,7 +322,10 @@ impl Drop for OpenDevice {
 ///
 /// Returns the consumer end of the ring alongside the open device. `capacity` is in
 /// samples; at ~805 Hz, 8192 is roughly ten seconds of slack.
-pub fn open(found: &FoundDevice, capacity: usize) -> Result<(OpenDevice, rtrb::Consumer<Sample>), Error> {
+pub fn open(
+    found: &FoundDevice,
+    capacity: usize,
+) -> Result<(OpenDevice, rtrb::Consumer<Sample>), Error> {
     let device = IOHIDDevice::new(None, found.service.0)
         .ok_or_else(|| Error::Iokit("IOHIDDeviceCreate returned null".into()))?;
 

@@ -146,7 +146,10 @@ pub fn run(
             hits as f64 / expected as f64 * 100.0,
         );
     } else {
-        println!("{false_pos} false positive(s) across {} fixture(s).", outcomes.len());
+        println!(
+            "{false_pos} false positive(s) across {} fixture(s).",
+            outcomes.len()
+        );
     }
     for o in outcomes.iter().filter(|o| !o.passed()) {
         println!(

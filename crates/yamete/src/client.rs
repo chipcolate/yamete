@@ -42,9 +42,21 @@ pub fn status() -> Result<(), Error> {
 
     match serde_json::from_str::<Event>(&line) {
         Ok(Event::Status(s)) => {
-            println!("yamete {}  ({})", s.version, if s.enabled { "enabled" } else { "DISABLED" });
+            println!(
+                "yamete {}  ({})",
+                s.version,
+                if s.enabled { "enabled" } else { "DISABLED" }
+            );
             println!("  uptime     {:.0}s", s.uptime_s);
-            println!("  sensor     {:.0} Hz{}", s.rate_hz, if s.has_gyro { ", gyro present" } else { ", NO GYRO" });
+            println!(
+                "  sensor     {:.0} Hz{}",
+                s.rate_hz,
+                if s.has_gyro {
+                    ", gyro present"
+                } else {
+                    ", NO GYRO"
+                }
+            );
             println!("  slaps      {}", s.slaps);
             println!("  telemetry  {} subscriber(s)", s.telemetry_subscribers);
             if s.warming_up {
@@ -73,7 +85,14 @@ pub fn set_enabled(value: bool) -> Result<(), Error> {
 
     match serde_json::from_str::<Event>(&line) {
         Ok(Event::Config { config }) => {
-            println!("detection {}", if config.enabled { "enabled" } else { "disabled" });
+            println!(
+                "detection {}",
+                if config.enabled {
+                    "enabled"
+                } else {
+                    "disabled"
+                }
+            );
             Ok(())
         }
         Ok(Event::Error { message }) => Err(Error::Iokit(message)),

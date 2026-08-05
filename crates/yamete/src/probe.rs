@@ -48,11 +48,20 @@ impl Summary {
 
 fn report_stream(kind: SensorKind, summary: &Summary, stats: &Stats, elapsed: Duration) {
     let hz = summary.count as f64 / elapsed.as_secs_f64();
-    println!("\n  {} (usage {})", kind.as_str(), match kind {
-        SensorKind::Accel => 3,
-        SensorKind::Gyro => 9,
-    });
-    println!("    samples      {} in {:.2}s → {:.1} Hz", summary.count, elapsed.as_secs_f64(), hz);
+    println!(
+        "\n  {} (usage {})",
+        kind.as_str(),
+        match kind {
+            SensorKind::Accel => 3,
+            SensorKind::Gyro => 9,
+        }
+    );
+    println!(
+        "    samples      {} in {:.2}s → {:.1} Hz",
+        summary.count,
+        elapsed.as_secs_f64(),
+        hz
+    );
     println!(
         "    magnitude    mean {:.4} {u}, min {:.4}, max {:.4}",
         summary.mean(),
@@ -83,7 +92,14 @@ pub fn run(secs: f64) -> Result<(), Error> {
     }
 
     let mut imu = Imu::open()?;
-    println!("Opened accelerometer{}.", if imu.has_gyro() { " and gyroscope" } else { " (no gyroscope)" });
+    println!(
+        "Opened accelerometer{}.",
+        if imu.has_gyro() {
+            " and gyroscope"
+        } else {
+            " (no gyroscope)"
+        }
+    );
     println!("Sampling for {secs:.1}s — hold the machine still...");
 
     let mut accel = Summary::new();

@@ -23,20 +23,17 @@ use serde::{Deserialize, Serialize};
 /// default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum GyroMode {
     /// Ignore the gyroscope entirely.
     Off,
     /// Report whether the gyro corroborated, but never suppress on its absence.
     Annotate,
     /// Suppress accelerometer triggers the gyroscope does not corroborate.
+    #[default]
     Require,
 }
 
-impl Default for GyroMode {
-    fn default() -> Self {
-        GyroMode::Require
-    }
-}
 
 /// Thresholds for the five accelerometer detectors.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

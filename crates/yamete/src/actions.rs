@@ -41,8 +41,10 @@ struct Scheduled {
 
 /// Work handed to the background executor.
 enum Job {
+    /// Boxed because the decoded audio makes this variant far larger than the others, and
+    /// every queued job — including webhooks and commands — would otherwise be sized for it.
     Sound {
-        data: StaticSoundData,
+        data: Box<StaticSoundData>,
     },
     Exec {
         program: String,
@@ -163,7 +165,11 @@ impl Executor {
                     *volume_db
                 };
                 Job::Sound {
-                    data: data.clone().volume(gain).playback_rate(f64::from(*playback_rate)),
+                    data: Box::new(
+                        data.clone()
+                            .volume(gain)
+                            .playback_rate(f64::from(*playback_rate)),
+                    ),
                 }
             }
 
@@ -398,7 +404,9 @@ fn run_worker(rx: mpsc::Receiver<Scheduled>) {
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                if audio.is_some() && last_sound.elapsed() > AUDIO_IDLE_TIMEOUT && pending.is_empty()
+                if audio.is_some()
+                    && last_sound.elapsed() > AUDIO_IDLE_TIMEOUT
+                    && pending.is_empty()
                 {
                     tracing::debug!("releasing the audio device after inactivity");
                     audio = None;
@@ -423,17 +431,13 @@ fn ensure_audio(audio: &mut Option<AudioManager<DefaultBackend>>) {
     }
 }
 
-fn execute(
-    audio: &mut Option<AudioManager<DefaultBackend>>,
-    last_sound: &mut Instant,
-    job: Job,
-) {
+fn execute(audio: &mut Option<AudioManager<DefaultBackend>>, last_sound: &mut Instant, job: Job) {
     match job {
         Job::Sound { data } => {
             *last_sound = Instant::now();
             ensure_audio(audio);
             if let Some(manager) = audio.as_mut() {
-                if let Err(e) = manager.play(data) {
+                if let Err(e) = manager.play(*data) {
                     tracing::warn!("could not play sound: {e}");
                 }
             }
@@ -649,7 +653,10 @@ mod tests {
         let picks: Vec<PathBuf> = (0..4)
             .filter_map(|_| ex.pick_sound(&files, SoundOrder::Sequential))
             .collect();
-        assert_eq!(picks, [&files[0], &files[1], &files[2], &files[0]].map(|p| p.clone()));
+        assert_eq!(
+            picks,
+            [&files[0], &files[1], &files[2], &files[0]].map(|p| p.clone())
+        );
 
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -705,7 +712,10 @@ mod tests {
                 last_pick: None,
             };
             for _ in 0..5 {
-                assert_eq!(ex.pick_sound(std::slice::from_ref(&only), order), Some(only.clone()));
+                assert_eq!(
+                    ex.pick_sound(std::slice::from_ref(&only), order),
+                    Some(only.clone())
+                );
             }
         }
         std::fs::remove_dir_all(&dir).ok();
@@ -721,7 +731,11 @@ mod tests {
         // The directory and one of its files, listed together.
         let entries = vec![dir.clone(), dir.join("a.mp3")];
         let flat = playlist(&entries);
-        assert_eq!(flat.len(), 2, "duplicate should have been dropped: {flat:?}");
+        assert_eq!(
+            flat.len(),
+            2,
+            "duplicate should have been dropped: {flat:?}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -770,11 +784,13 @@ mod tests {
     fn a_delayed_sound_gets_the_device_open_before_it_is_due() {
         // The scheduler only pre-warms for sounds; an exec or webhook has no reason to
         // spin up CoreAudio.
-        let Ok(data) = StaticSoundData::from_file("/System/Library/Sounds/Sosumi.aiff")
-        else {
+        let Ok(data) = StaticSoundData::from_file("/System/Library/Sounds/Sosumi.aiff") else {
             return; // no system sound available in this environment
         };
-        assert!(matches!(Job::Sound { data }, Job::Sound { .. }));
+        let sound = Job::Sound {
+            data: Box::new(data),
+        };
+        assert!(matches!(sound, Job::Sound { .. }));
 
         let exec = Job::Exec {
             program: "/bin/true".into(),

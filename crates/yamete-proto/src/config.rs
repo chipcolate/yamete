@@ -231,8 +231,7 @@ impl Action {
                 // An empty URL is simply not filled in yet. A non-empty one that is not
                 // HTTP is a mistake worth naming.
                 let url = url.trim();
-                if !url.is_empty() && !url.starts_with("http://") && !url.starts_with("https://")
-                {
+                if !url.is_empty() && !url.starts_with("http://") && !url.starts_with("https://") {
                     return Err(format!(
                         "action `{}`: webhook url must start with http:// or https://",
                         self.id
@@ -564,7 +563,10 @@ mod tests {
     fn validation_rejects_nonsense_values() {
         let mut bad_sensitivity = DaemonConfig::default();
         bad_sensitivity.detector.sensitivity = 5.0;
-        assert!(bad_sensitivity.validate().unwrap_err().contains("sensitivity"));
+        assert!(bad_sensitivity
+            .validate()
+            .unwrap_err()
+            .contains("sensitivity"));
 
         let bad_rate = DaemonConfig {
             actions: vec![Action {

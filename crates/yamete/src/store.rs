@@ -125,7 +125,10 @@ mod tests {
         let path = dir.join("config.json");
         save(&path, &DaemonConfig::default()).unwrap();
         assert!(path.exists());
-        std::fs::remove_dir_all(std::env::temp_dir().join(format!("spank-mkdir-{}", std::process::id()))).ok();
+        std::fs::remove_dir_all(
+            std::env::temp_dir().join(format!("spank-mkdir-{}", std::process::id())),
+        )
+        .ok();
     }
 
     #[test]

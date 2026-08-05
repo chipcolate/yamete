@@ -70,9 +70,21 @@ whose daemon rejects arguments the app passes it, and fails silently because the
 exits before it can log anything.
 
 ```sh
-cargo test --workspace     # unit tests plus a replay of the whole fixture corpus
+cargo test --workspace      # unit tests plus a replay of the whole fixture corpus
+cargo clippy --workspace --all-targets -- -D warnings
 cd app && bun run tauri dev # the app against a live frontend, for UI work
 ```
+
+CI runs those on every PR against `main`, plus an unsigned bundle build — bundling is the
+only thing that exercises `tauri.conf.json`, the capability set, the icon list and the
+sidecar staging, none of which the compiler sees.
+
+Tagging `v*` builds, signs, notarises and publishes a GitHub Release with the DMG and its
+checksum. That needs six repository secrets: `APPLE_CERTIFICATE` (base64 of the Developer
+ID `.p12`), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_API_ISSUER`,
+`APPLE_API_KEY` and `APPLE_API_KEY_CONTENT` (the `.p8` file's contents). Without them the
+release still builds, just unsigned — and so it will not open on anyone else's Mac. The
+tag has to match the version in both `Cargo.toml` and `tauri.conf.json`.
 
 ## Signing and notarisation
 

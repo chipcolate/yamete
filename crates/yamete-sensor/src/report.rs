@@ -110,7 +110,11 @@ mod tests {
         assert!((s.z + 0.9974).abs() < 1e-3, "z = {}", s.z);
         // Magnitude at rest must be ~1 g, which is the load-bearing sanity check on
         // both the byte offsets and the 65536 divisor.
-        assert!((s.magnitude() - 1.0).abs() < 0.01, "|a| = {}", s.magnitude());
+        assert!(
+            (s.magnitude() - 1.0).abs() < 0.01,
+            "|a| = {}",
+            s.magnitude()
+        );
     }
 
     #[test]

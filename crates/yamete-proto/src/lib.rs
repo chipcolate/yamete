@@ -75,13 +75,17 @@ fn half() -> f32 {
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum Event {
     Pong,
-    Config { config: Box<DaemonConfig> },
+    Config {
+        config: Box<DaemonConfig>,
+    },
     Status(Status),
     /// A slap was detected.
     Slap(Slap),
     /// A batch of decimated samples and detector scores, for the live scope.
     Telemetry(Telemetry),
-    Error { message: String },
+    Error {
+        message: String,
+    },
 }
 
 /// A detected slap, as reported to clients.

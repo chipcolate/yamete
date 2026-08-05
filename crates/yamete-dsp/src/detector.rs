@@ -315,11 +315,7 @@ impl Detector {
     /// Feed one gyroscope sample.
     pub fn push_gyro(&mut self, f: Frame) {
         let g = &mut self.gyro;
-        let hp = [
-            g.hp[0].push(f.x),
-            g.hp[1].push(f.y),
-            g.hp[2].push(f.z),
-        ];
+        let hp = [g.hp[0].push(f.x), g.hp[1].push(f.y), g.hp[2].push(f.z)];
         let mag = (hp[0] * hp[0] + hp[1] * hp[1] + hp[2] * hp[2]).sqrt();
         let sta = g.sta.push(mag);
         let lta = g.lta.push(mag);
@@ -358,7 +354,11 @@ impl Detector {
 
         let cusum = a.cusum.push(mag, mean, scale);
         let kurtosis = a.kurtosis.push(mag);
-        let peak_mad = if scale > 1e-9 { (mag - mean) / scale } else { 0.0 };
+        let peak_mad = if scale > 1e-9 {
+            (mag - mean) / scale
+        } else {
+            0.0
+        };
 
         let th = &self.cfg.thresholds;
         let votes = u8::from(sta_lta >= th.sta_lta)
@@ -411,10 +411,14 @@ impl Detector {
         };
 
         let gyro_peak = self.gyro.amp_window.max().max(0.0);
-        let gyro_ratio = if peak_g > 1e-6 { gyro_peak / peak_g } else { 0.0 };
+        let gyro_ratio = if peak_g > 1e-6 {
+            gyro_peak / peak_g
+        } else {
+            0.0
+        };
         // Either a large rotation relative to translation, or a large rotation outright.
-        let gyro_confirmed = gyro_ratio >= self.cfg.gyro_ratio_min
-            || gyro_peak >= self.cfg.gyro_peak_min;
+        let gyro_confirmed =
+            gyro_ratio >= self.cfg.gyro_ratio_min || gyro_peak >= self.cfg.gyro_peak_min;
         if self.cfg.gyro_mode == GyroMode::Require && !gyro_confirmed {
             return None;
         }
@@ -549,7 +553,12 @@ mod tests {
     fn warmup_suppresses_the_startup_transient() {
         // The very first samples arrive with every filter unprimed; without a warmup
         // guard that alone reads as a large impact.
-        let mut frames = vec![Frame { t: 0.0, x: 0.0, y: 0.0, z: -1.0 }];
+        let mut frames = vec![Frame {
+            t: 0.0,
+            x: 0.0,
+            y: 0.0,
+            z: -1.0,
+        }];
         frames.extend(quiet(0.2, 0.001));
         assert!(run(&frames, accel_only()).is_empty());
     }
@@ -559,7 +568,11 @@ mod tests {
         let mut frames = quiet(2.0, 0.0);
         frames.extend(impact(2.0, 0.6, 0.5));
         let hits = run(&frames, accel_only());
-        assert_eq!(hits.len(), 1, "expected exactly one detection, got {hits:?}");
+        assert_eq!(
+            hits.len(),
+            1,
+            "expected exactly one detection, got {hits:?}"
+        );
         assert_eq!(hits[0].tier, Tier::Major);
         assert!(hits[0].votes >= 4, "votes = {}", hits[0].votes);
         assert!(hits[0].intensity > 0.5, "intensity = {}", hits[0].intensity);
@@ -640,7 +653,11 @@ mod tests {
                 .into_iter()
                 .map(|f| Frame { z: 0.0, ..f })
                 .collect();
-            f.extend(impact(2.0, 40.0, 0.5).into_iter().map(|f| Frame { z: f.z + 1.0, ..f }));
+            f.extend(
+                impact(2.0, 40.0, 0.5)
+                    .into_iter()
+                    .map(|f| Frame { z: f.z + 1.0, ..f }),
+            );
             f
         };
 

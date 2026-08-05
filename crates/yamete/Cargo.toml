@@ -1,0 +1,20 @@
+[package]
+name = "yamete"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+yamete-sensor.workspace = true
+yamete-dsp.workspace = true
+yamete-proto.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time", "signal", "process"] }
+kira = { version = "0.12", features = ["aiff", "aac", "alac", "caf"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+libc = "0.2"

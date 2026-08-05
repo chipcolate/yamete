@@ -13,10 +13,10 @@ out to need the gyroscope, which no comparable project uses.
 
 | | |
 |---|---|
-| `crates/spank-sensor` | IOKit HID access to the accelerometer and gyroscope, ~805 Hz |
-| `crates/spank-dsp` | The detector. No platform or I/O dependencies, so it can be replayed against recordings in a test |
-| `crates/spank-proto` | Wire types for the control socket |
-| `crates/spankd` | The daemon, its actions, and the tuning tools |
+| `crates/yamete-sensor` | IOKit HID access to the accelerometer and gyroscope, ~805 Hz |
+| `crates/yamete-dsp` | The detector. No platform or I/O dependencies, so it can be replayed against recordings in a test |
+| `crates/yamete-proto` | Wire types for the control socket |
+| `crates/yamete` | The daemon, its actions, and the tuning tools |
 | `app/` | Yamete, the Tauri menu bar app |
 | `fixtures/` | 40 annotated slaps and 150 s of things that must stay silent |
 
@@ -30,7 +30,7 @@ Produces a signed `.app` and `.dmg`, then reports whether the signature is valid
 whether Gatekeeper would accept it. Install by opening the DMG and dragging across.
 
 The script stages the daemon into the app bundle before building it. That order matters:
-the app spawns the bundled `spankd`, so building against a stale copy produces a bundle
+the app spawns the bundled `yamete`, so building against a stale copy produces a bundle
 whose daemon rejects arguments the app passes it, and fails silently because the child
 exits before it can log anything.
 
@@ -70,14 +70,14 @@ export APPLE_TEAM_ID=HNF5BY9XXV
 
 ## The daemon on its own
 
-`spankd` runs happily without the app, which is how the detector is developed.
+`yamete` runs happily without the app, which is how the detector is developed.
 
 ```sh
-spankd probe            # is the sensor there, at what rate, decoding correctly
-spankd watch --scores   # live detections, with the five detector scores
-spankd status           # what the running daemon thinks
-spankd listen           # stream detections as they happen
-spankd install --copy   # run it permanently as a LaunchAgent, independent of the app
+yamete probe            # is the sensor there, at what rate, decoding correctly
+yamete watch --scores   # live detections, with the five detector scores
+yamete status           # what the running daemon thinks
+yamete listen           # stream detections as they happen
+yamete install --copy   # run it permanently as a LaunchAgent, independent of the app
 ```
 
 The app bundles its own copy and manages its lifetime, so a LaunchAgent is only needed if
@@ -88,11 +88,11 @@ you want detection without the app running.
 Thresholds are derived from recordings, not guessed. The workflow:
 
 ```sh
-spankd record-suite                      # record the corpus, with a metronome for slaps
-spankd analyze fixtures/idle.fixture.gz  # what the detectors read on a quiet machine
-spankd analyze fixtures/slap-*.gz --at-detections   # and at a real slap
-spankd sweep fixtures/*.gz --knob gyro-ratio        # score a threshold against everything
-spankd replay fixtures/*.gz -v           # what the current settings would do
+yamete record-suite                      # record the corpus, with a metronome for slaps
+yamete analyze fixtures/idle.fixture.gz  # what the detectors read on a quiet machine
+yamete analyze fixtures/slap-*.gz --at-detections   # and at a real slap
+yamete sweep fixtures/*.gz --knob gyro-ratio        # score a threshold against everything
+yamete replay fixtures/*.gz -v           # what the current settings would do
 ```
 
 `cargo test` replays the whole corpus and holds the detector to a measured envelope:

@@ -106,11 +106,11 @@ fn toggle_detection(app: &AppHandle) {
     let Some(daemon) = app.try_state::<Arc<Daemon>>() else {
         return;
     };
-    let currently_enabled = match daemon.request(&spank_proto::Request::GetConfig) {
-        Ok(spank_proto::Event::Config { config }) => config.enabled,
+    let currently_enabled = match daemon.request(&yamete_proto::Request::GetConfig) {
+        Ok(yamete_proto::Event::Config { config }) => config.enabled,
         _ => return,
     };
-    let _ = daemon.request(&spank_proto::Request::SetEnabled {
+    let _ = daemon.request(&yamete_proto::Request::SetEnabled {
         value: !currently_enabled,
     });
 }

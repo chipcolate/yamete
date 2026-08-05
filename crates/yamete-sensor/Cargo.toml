@@ -1,0 +1,27 @@
+[package]
+name = "yamete-sensor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+rtrb = "0.3"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+objc2-io-kit = { version = "0.3", default-features = false, features = [
+    "std",
+    "hid",
+    "libc",
+    "dispatch2",
+] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "CFBase",
+    "CFString",
+    "CFNumber",
+    "CFDictionary",
+] }
+dispatch2 = { version = "0.3", default-features = false, features = ["std"] }

@@ -19,7 +19,7 @@ use tauri::{AppHandle, Manager};
 const SHOW: &str = "show";
 
 fn socket_path() -> PathBuf {
-    spank_proto::state_dir().join("app.sock")
+    yamete_proto::state_dir().join("app.sock")
 }
 
 /// Outcome of the startup check.
@@ -63,7 +63,7 @@ pub fn acquire() -> std::io::Result<Instance> {
 /// Listen for later launches and surface the window when one arrives.
 pub fn spawn_listener(app: AppHandle, listener: UnixListener) {
     std::thread::Builder::new()
-        .name("spank-single-instance".into())
+        .name("yamete-single-instance".into())
         .spawn(move || {
             for stream in listener.incoming().flatten() {
                 let mut line = String::new();

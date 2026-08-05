@@ -1099,55 +1099,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spank-dsp"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "serde",
- "serde_json",
- "thiserror 2.0.19",
-]
-
-[[package]]
-name = "spank-proto"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "spank-dsp",
-]
-
-[[package]]
-name = "spank-sensor"
-version = "0.1.0"
-dependencies = [
- "dispatch2",
- "libc",
- "objc2-core-foundation",
- "objc2-io-kit",
- "rtrb",
- "thiserror 2.0.19",
-]
-
-[[package]]
-name = "spankd"
-version = "0.1.0"
-dependencies = [
- "clap",
- "kira",
- "libc",
- "serde",
- "serde_json",
- "spank-dsp",
- "spank-proto",
- "spank-sensor",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "ureq",
-]
-
-[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1873,6 +1824,55 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "yamete"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "kira",
+ "libc",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "ureq",
+ "yamete-dsp",
+ "yamete-proto",
+ "yamete-sensor",
+]
+
+[[package]]
+name = "yamete-dsp"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+]
+
+[[package]]
+name = "yamete-proto"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "yamete-dsp",
+]
+
+[[package]]
+name = "yamete-sensor"
+version = "0.1.0"
+dependencies = [
+ "dispatch2",
+ "libc",
+ "objc2-core-foundation",
+ "objc2-io-kit",
+ "rtrb",
+ "thiserror 2.0.19",
 ]
 
 [[package]]

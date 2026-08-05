@@ -44,7 +44,7 @@
       "entitlements": "entitlements.plist"
     },
     "externalBin": [
-      "binaries/spankd"
+      "binaries/yamete"
     ]
   }
 }

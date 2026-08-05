@@ -620,7 +620,7 @@ function setConnected(connected: boolean) {
       $("status-text").textContent = "connected";
     }
   } else {
-    $("status-text").textContent = "spankd not running";
+    $("status-text").textContent = "yamete not running";
     $("scope-empty").textContent = "waiting for the daemon…";
     $("scope-empty").hidden = false;
   }

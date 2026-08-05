@@ -1,6 +1,6 @@
 //! Owning the daemon's lifetime.
 //!
-//! The app bundles `spankd` as a sidecar and runs it as a child process, so opening Yamete
+//! The app bundles `yamete` as a sidecar and runs it as a child process, so opening Yamete
 //! starts detection and quitting Yamete stops it. That is the opposite of the launchd
 //! arrangement, where the daemon outlives the app — the tradeoff being that detection now
 //! only happens while the app is open, which is what makes the menu bar icon mean
@@ -38,10 +38,10 @@ impl Supervisor {
 
     /// Whether a daemon is currently reachable.
     pub fn daemon_is_running() -> bool {
-        UnixStream::connect(spank_proto::socket_path()).is_ok()
+        UnixStream::connect(yamete_proto::socket_path()).is_ok()
     }
 
-    /// Path to the bundled `spankd`.
+    /// Path to the bundled `yamete`.
     ///
     /// Tauri strips the target-triple suffix and places sidecars next to the main
     /// executable, so this is simply a sibling. Falls back to a development build so
@@ -50,14 +50,14 @@ impl Supervisor {
         let exe = std::env::current_exe().ok()?;
         let dir = exe.parent()?;
 
-        let bundled = dir.join("spankd");
+        let bundled = dir.join("yamete");
         if bundled.exists() {
             return Some(bundled);
         }
-        // Running from a build directory: app/src-tauri/target/<profile>/spank-app
+        // Running from a build directory: app/src-tauri/target/<profile>/yamete-app
         for candidate in [
-            dir.join("../../../../target/release/spankd"),
-            dir.join("../../../../target/debug/spankd"),
+            dir.join("../../../../target/release/yamete"),
+            dir.join("../../../../target/debug/yamete"),
         ] {
             if candidate.exists() {
                 return candidate.canonicalize().ok();
@@ -75,11 +75,11 @@ impl Supervisor {
         }
 
         let path = Self::sidecar_path()
-            .ok_or_else(|| "could not find the bundled spankd binary".to_string())?;
+            .ok_or_else(|| "could not find the bundled yamete binary".to_string())?;
 
         let child = Command::new(&path)
             .args(["run", "--daemon", "--exit-with-parent"])
-            // The pipe is the leash: spankd exits when it closes.
+            // The pipe is the leash: yamete exits when it closes.
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -96,7 +96,7 @@ impl Supervisor {
             }
             std::thread::sleep(Duration::from_millis(100));
         }
-        Err("spankd did not start listening within ten seconds".into())
+        Err("yamete did not start listening within ten seconds".into())
     }
 
     /// Stop the daemon, but only if this app started it.

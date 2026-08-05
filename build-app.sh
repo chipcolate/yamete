@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build Yamete.
 #
-# The sidecar staging order matters: the app spawns the bundled `spankd`, so building the
+# The sidecar staging order matters: the app spawns the bundled `yamete`, so building the
 # app against a stale copy produces a bundle whose daemon rejects arguments the app passes
 # it — and fails silently, because the child exits before it can log anything.
 #
@@ -71,13 +71,13 @@ case "$APPLE_SIGNING_IDENTITY" in
 esac
 
 echo "==> daemon"
-cargo build --release -p spankd
+cargo build --release -p yamete
 
 echo "==> staging sidecar for $TRIPLE"
 mkdir -p app/src-tauri/binaries
-cp target/release/spankd "app/src-tauri/binaries/spankd-$TRIPLE"
+cp target/release/yamete "app/src-tauri/binaries/yamete-$TRIPLE"
 # Anything Tauri copied next to a previous build would shadow the fresh one.
-rm -f app/src-tauri/target/release/spankd app/src-tauri/target/debug/spankd
+rm -f app/src-tauri/target/release/yamete app/src-tauri/target/debug/yamete
 
 # bundle_dmg.sh fails outright if a volume it wants is already attached. Two ways that
 # happens: a Yamete volume left mounted after installing a previous build, and scratch

@@ -1,4 +1,4 @@
-//! The app's connection to `spankd`.
+//! The app's connection to `yamete`.
 //!
 //! The app is a *controller*, not the detector — everything real happens in the daemon,
 //! which runs under launchd whether or not this window is open. So this is a client that
@@ -14,7 +14,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use spank_proto::{DaemonConfig, Event, Request, Status};
+use yamete_proto::{DaemonConfig, Event, Request, Status};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// How long to wait for a reply before giving up on a request.
@@ -73,20 +73,20 @@ impl Daemon {
     pub fn request(&self, request: &Request) -> Result<Event, String> {
         let _guard = self.request_lock.lock().map_err(|e| e.to_string())?;
 
-        let mut stream = UnixStream::connect(spank_proto::socket_path()).map_err(|e| {
-            format!("spankd is not running ({e}). Start it with `spankd install --copy`.")
+        let mut stream = UnixStream::connect(yamete_proto::socket_path()).map_err(|e| {
+            format!("yamete is not running ({e}). Start it with `yamete install --copy`.")
         })?;
         stream
             .set_read_timeout(Some(REQUEST_TIMEOUT))
             .map_err(|e| e.to_string())?;
         stream
-            .write_all(spank_proto::to_line(request).as_bytes())
+            .write_all(yamete_proto::to_line(request).as_bytes())
             .map_err(|e| format!("could not send request: {e}"))?;
 
         let mut line = String::new();
         BufReader::new(&stream)
             .read_line(&mut line)
-            .map_err(|e| format!("no reply from spankd: {e}"))?;
+            .map_err(|e| format!("no reply from yamete: {e}"))?;
 
         serde_json::from_str(&line).map_err(|e| format!("could not parse reply: {e}"))
     }
@@ -107,7 +107,7 @@ impl Default for Daemon {
 /// happened to be opened via the tray. The window system is the authority, so ask it.
 pub fn spawn_visibility_watch(app: AppHandle, daemon: Arc<Daemon>) {
     std::thread::Builder::new()
-        .name("spank-visibility".into())
+        .name("yamete-visibility".into())
         .spawn(move || loop {
             let visible = app
                 .get_webview_window("main")
@@ -125,7 +125,7 @@ pub fn spawn_visibility_watch(app: AppHandle, daemon: Arc<Daemon>) {
 /// selectively rather than filtering a firehose.
 pub fn spawn_subscription(app: AppHandle, daemon: Arc<Daemon>) {
     std::thread::Builder::new()
-        .name("spank-subscription".into())
+        .name("yamete-subscription".into())
         .spawn(move || loop {
             match connect_and_stream(&app, &daemon) {
                 Ok(()) => {}
@@ -139,7 +139,7 @@ pub fn spawn_subscription(app: AppHandle, daemon: Arc<Daemon>) {
 }
 
 fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), String> {
-    let stream = UnixStream::connect(spank_proto::socket_path())
+    let stream = UnixStream::connect(yamete_proto::socket_path())
         .map_err(|e| format!("could not connect: {e}"))?;
     let mut write_half = stream.try_clone().map_err(|e| e.to_string())?;
 
@@ -149,7 +149,7 @@ fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), Strin
     let mut subscribed_telemetry = daemon.want_telemetry.load(Ordering::Relaxed);
     write_half
         .write_all(
-            spank_proto::to_line(&Request::Subscribe {
+            yamete_proto::to_line(&Request::Subscribe {
                 slaps: true,
                 telemetry: subscribed_telemetry,
             })
@@ -177,7 +177,7 @@ fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), Strin
             subscribed_telemetry = wanted;
             write_half
                 .write_all(
-                    spank_proto::to_line(&Request::Subscribe {
+                    yamete_proto::to_line(&Request::Subscribe {
                         slaps: true,
                         telemetry: wanted,
                     })
@@ -221,7 +221,7 @@ fn forward(app: &AppHandle, event: Event) {
 
 /// Minimal stderr logging. The app has no logging framework and does not need one.
 fn tracing_lite(message: &str) {
-    eprintln!("[spank-app] {message}");
+    eprintln!("[yamete-app] {message}");
 }
 
 // --- Commands callable from the webview ---

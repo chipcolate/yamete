@@ -3159,39 +3159,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spank-app"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "spank-dsp",
- "spank-proto",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
-]
-
-[[package]]
-name = "spank-dsp"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "serde",
- "serde_json",
- "thiserror 2.0.19",
-]
-
-[[package]]
-name = "spank-proto"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "spank-dsp",
-]
-
-[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4911,6 +4878,39 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "yamete-app"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "yamete-dsp",
+ "yamete-proto",
+]
+
+[[package]]
+name = "yamete-dsp"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+]
+
+[[package]]
+name = "yamete-proto"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "yamete-dsp",
 ]
 
 [[package]]

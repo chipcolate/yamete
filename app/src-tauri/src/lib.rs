@@ -26,7 +26,7 @@ pub fn run() {
         // A failure here should not stop the app starting; worst case is the old
         // behaviour of allowing two.
         Err(e) => {
-            eprintln!("[spank-app] single-instance check failed: {e}");
+            eprintln!("[yamete-app] single-instance check failed: {e}");
             None
         }
     };
@@ -59,8 +59,8 @@ pub fn run() {
             // opening the app should mean detection is running.
             let supervisor = app.state::<Arc<supervisor::Supervisor>>().inner().clone();
             match supervisor.ensure_running() {
-                Ok(note) => eprintln!("[spank-app] {note}"),
-                Err(e) => eprintln!("[spank-app] could not start the daemon: {e}"),
+                Ok(note) => eprintln!("[yamete-app] {note}"),
+                Err(e) => eprintln!("[yamete-app] could not start the daemon: {e}"),
             }
 
             tray::build(app.handle())?;
@@ -124,7 +124,7 @@ fn daemon_owned(supervisor: tauri::State<'_, Arc<supervisor::Supervisor>>) -> bo
 fn open_logs(app: tauri::AppHandle) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
     let dir = std::env::var("HOME")
-        .map(|h| format!("{h}/Library/Logs/spank"))
+        .map(|h| format!("{h}/Library/Logs/yamete"))
         .map_err(|e| e.to_string())?;
     app.opener()
         .open_path(dir, None::<&str>)

@@ -14,10 +14,10 @@ use tauri::{
 use crate::daemon::Daemon;
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Open Spank…", true, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "Open Yamete…", true, None::<&str>)?;
     let toggle = MenuItem::with_id(app, "toggle", "Pause detection", true, None::<&str>)?;
     let logs = MenuItem::with_id(app, "logs", "Show logs…", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit Spank", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit Yamete", true, None::<&str>)?;
 
     let menu = Menu::with_items(
         app,
@@ -38,7 +38,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         // A template image is tinted by macOS to match the menu bar, so it stays legible
         // in both light and dark mode and while the bar is highlighted.
         .icon_as_template(true)
-        .tooltip("Spank")
+        .tooltip("Yamete")
         .menu(&menu)
         // Left click should toggle the panel, so the menu is bound to right click only.
         .show_menu_on_left_click(false)

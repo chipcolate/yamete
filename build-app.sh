@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Spank.
+# Build Yamete.
 #
 # The sidecar staging order matters: the app spawns the bundled `spankd`, so building the
 # app against a stale copy produces a bundle whose daemon rejects arguments the app passes
@@ -80,11 +80,11 @@ cp target/release/spankd "app/src-tauri/binaries/spankd-$TRIPLE"
 rm -f app/src-tauri/target/release/spankd app/src-tauri/target/debug/spankd
 
 # bundle_dmg.sh fails outright if a volume it wants is already attached. Two ways that
-# happens: a Spank volume left mounted after installing a previous build, and scratch
+# happens: a Yamete volume left mounted after installing a previous build, and scratch
 # `dmg.*` volumes orphaned by an interrupted or failed bundle run. The second kind does
 # not appear in Finder and accumulates, so each failure makes the next one likelier.
 detach_stale_volumes() {
-  for vol in /Volumes/Spank /Volumes/dmg.*; do
+  for vol in /Volumes/Yamete /Volumes/dmg.*; do
     if [ -d "$vol" ]; then
       echo "==> detaching stale volume $vol"
       hdiutil detach "$vol" -force >/dev/null 2>&1 || true
@@ -102,7 +102,7 @@ if ! (cd app && bun run tauri build); then
   (cd app && bun run tauri build)
 fi
 
-APP=app/src-tauri/target/release/bundle/macos/Spank.app
+APP=app/src-tauri/target/release/bundle/macos/Yamete.app
 DMG=$(ls -t app/src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1 || true)
 
 echo
@@ -134,7 +134,7 @@ echo
 if [ -n "$DMG" ]; then
   echo "Built $DMG"
   echo
-  echo "Quit any running Spank, then install with:"
+  echo "Quit any running Yamete, then install with:"
   # Printed as a command rather than a bare path: pasting a path into a shell tries to
   # execute it, which fails with a permission error that says nothing useful.
   echo "  open $DMG"

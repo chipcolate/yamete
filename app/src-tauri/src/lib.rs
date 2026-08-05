@@ -1,4 +1,4 @@
-//! Spank — a menu bar controller for the slap detector.
+//! Yamete — a menu bar controller for the slap detector.
 //!
 //! Deliberately thin. The daemon does the work and keeps running whether or not this is
 //! open; the app exists to show you what the detector is seeing and to change its mind

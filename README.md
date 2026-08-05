@@ -1,4 +1,6 @@
-# spank
+# yamete
+
+やめて — *stop it*.
 
 Slap detection for Apple Silicon MacBooks. Hit the laptop, it makes a noise.
 
@@ -15,7 +17,7 @@ out to need the gyroscope, which no comparable project uses.
 | `crates/spank-dsp` | The detector. No platform or I/O dependencies, so it can be replayed against recordings in a test |
 | `crates/spank-proto` | Wire types for the control socket |
 | `crates/spankd` | The daemon, its actions, and the tuning tools |
-| `app/` | Tauri menu bar app |
+| `app/` | Yamete, the Tauri menu bar app |
 | `fixtures/` | 40 annotated slaps and 150 s of things that must stay silent |
 
 ## Building

@@ -1,7 +1,7 @@
 //! Owning the daemon's lifetime.
 //!
-//! The app bundles `spankd` as a sidecar and runs it as a child process, so opening Spank
-//! starts detection and quitting Spank stops it. That is the opposite of the launchd
+//! The app bundles `spankd` as a sidecar and runs it as a child process, so opening Yamete
+//! starts detection and quitting Yamete stops it. That is the opposite of the launchd
 //! arrangement, where the daemon outlives the app — the tradeoff being that detection now
 //! only happens while the app is open, which is what makes the menu bar icon mean
 //! something.

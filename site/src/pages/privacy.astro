@@ -1,0 +1,273 @@
+---
+import Base from "../layouts/Base.astro";
+import { CONTACT_EMAIL, REPO } from "../lib/site";
+
+const title = "Privacy Policy — yamete";
+const description =
+  "yamete does not collect or transmit your data. Detection and configuration stay on your Mac.";
+const issues = `${REPO}/issues`;
+const contact = CONTACT_EMAIL;
+---
+
+<Base title={title} description={description}>
+  <main class="doc">
+    <article class="wrap doc__article">
+      <a class="back mono" href="/">← Back to yamete</a>
+
+      <h1>Privacy Policy</h1>
+      <p class="meta mono">Effective date: 8 August 2026</p>
+
+      <section>
+        <h2>In one sentence</h2>
+        <p>
+          yamete does not collect, transmit, or share your data with Chipcolate. Detection
+          runs on your Mac; configuration and logs stay under your home directory unless
+          <em>you</em> configure an action that sends something elsewhere.
+        </p>
+      </section>
+
+      <section>
+        <h2>What data we collect</h2>
+        <p>
+          <strong>None.</strong> There is no account, no sign-up, no analytics SDK, no crash
+          reporter that phones home, and no Chipcolate server the app talks to. We do not
+          receive sensor samples, slap events, your config, or device identifiers.
+        </p>
+      </section>
+
+      <section>
+        <h2>What the app stores on your Mac</h2>
+        <p>Everything lives in standard user-owned locations:</p>
+        <ul>
+          <li>
+            <strong>Config</strong> —
+            <code>~/Library/Application Support/com.chipcolate.yamete/config.json</code>
+            (detection settings, actions you define). Written with owner-only permissions.
+          </li>
+          <li>
+            <strong>Control socket</strong> —
+            <code>…/yamete.sock</code> for the menu bar app and CLI to talk to the daemon.
+            Owner-only; peers are checked by user id.
+          </li>
+          <li>
+            <strong>Logs</strong> —
+            <code>~/Library/Logs/yamete/</code> for diagnostics (for example a sound that
+            failed to decode). Failed webhooks are logged without query strings so tokens in
+            URLs are not written to disk.
+          </li>
+        </ul>
+        <p>
+          Uninstalling the LaunchAgent, quitting the app-owned daemon, and deleting those
+          paths removes the data. We never receive a copy.
+        </p>
+      </section>
+
+      <section>
+        <h2>Permissions we request</h2>
+        <ul>
+          <li>
+            <strong>Input Monitoring</strong> — required by macOS for any process that opens
+            HID devices, including the motion sensor yamete reads. It is
+            <em>not</em> used to observe keyboards, trackpads as text input, or screen
+            content. The daemon opens specific SPU accelerometer and gyroscope devices only;
+            it does not seize them from the system.
+          </li>
+        </ul>
+        <p>
+          No camera, microphone, contacts, photos, full-disk, or accessibility permission is
+          required for core detection.
+        </p>
+      </section>
+
+      <section>
+        <h2>What the sensor path processes</h2>
+        <p>
+          Acceleration and rotation samples are read in real time for slap detection. They
+          are not uploaded. Optional <strong>telemetry</strong> on the local socket exists
+          only so the menu bar app can draw the live scope while that window is visible; it
+          is reference-counted and off when nobody is watching. Samples are not retained as
+          a history except whatever you deliberately record with the CLI tuning tools
+          (<code>yamete calibrate</code> / <code>record-suite</code>), which write files you
+          choose on disk.
+        </p>
+      </section>
+
+      <section>
+        <h2>Actions you configure</h2>
+        <p>
+          yamete can play sounds, run a program you specify, or send an HTTP request you
+          configure (webhooks). Those features only do what you set up:
+        </p>
+        <ul>
+          <li>
+            <strong>Sound</strong> — opens audio files or folders you pick; no network.
+          </li>
+          <li>
+            <strong>Exec</strong> — starts a program you name, optionally with the slap
+            event on stdin and as <code>YAMETE_*</code> environment variables. That process
+            is under your control; we do not receive its output.
+          </li>
+          <li>
+            <strong>Webhook</strong> — sends a request to a URL you provide. That is the
+            only intentional network path in normal use, and it goes to endpoints
+            <em>you</em> choose (Home Assistant, IFTTT, your server, etc.), not to
+            Chipcolate.
+          </li>
+        </ul>
+        <p>
+          If a webhook or script includes personal data, that is your configuration. Treat
+          webhook URLs and headers as secrets; keep them out of shared screenshots of
+          config.
+        </p>
+      </section>
+
+      <section>
+        <h2>This website</h2>
+        <p>
+          <a href="https://yamete.app">yamete.app</a> is a static site. We do not run
+          first-party analytics or advertising on it. Hosting (for example GitHub Pages)
+          and your browser may process technical data such as IP addresses under those
+          providers’ policies; that traffic does not include sensor data from the app.
+        </p>
+      </section>
+
+      <section>
+        <h2>Third parties</h2>
+        <p>
+          The app contains no advertising networks, analytics SDKs, or crash-reporting
+          services that contact third parties on our behalf. Optional network use is limited
+          to user-configured webhooks and to whatever you run via exec.
+        </p>
+        <p>
+          Distribution may involve Apple (notarisation / Gatekeeper) and GitHub (source and
+          releases). Those platforms process data under their own terms when you download
+          or build software from them.
+        </p>
+      </section>
+
+      <section>
+        <h2>Children’s privacy</h2>
+        <p>
+          yamete does not knowingly collect information from anyone — including children
+          under 13 (or the equivalent minimum age in your jurisdiction). Because we collect
+          no personal data, there is nothing for Chipcolate to delete or export on request.
+        </p>
+      </section>
+
+      <section>
+        <h2>Your rights (GDPR, CCPA, and similar)</h2>
+        <p>
+          Those regimes give you rights over personal data held about you. Chipcolate holds
+          no personal data about yamete users from the product itself, so there is nothing
+          for us to provide or erase. Data on your Mac is under your control — edit the
+          config, clear logs, or uninstall to remove it.
+        </p>
+      </section>
+
+      <section>
+        <h2>Changes to this policy</h2>
+        <p>
+          If this policy changes, we will update the effective date above and note the
+          change in release notes when the product behaviour changes. Because the approach
+          is “collect nothing,” material revisions would only accompany a significant
+          redesign (for example adding an account or cloud service).
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>
+          Questions about this policy? Open an issue at
+          <a href={issues}>github.com/chipcolate/yamete/issues</a>
+          or email
+          <a href={`mailto:${contact}`}>{contact}</a>.
+        </p>
+        <p class="controller mono">
+          Controller: CHIPCOLATE SRL · Product: yamete
+        </p>
+      </section>
+    </article>
+  </main>
+</Base>
+
+<style>
+  .doc {
+    padding-block: clamp(2.5rem, 8vw, 5rem) var(--rhythm);
+    min-height: 100vh;
+  }
+
+  .doc__article {
+    max-width: 42rem;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 2rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 5vw, 3rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .meta {
+    margin: 0 0 3rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  section {
+    margin-bottom: 2.5rem;
+  }
+
+  section h2 {
+    font-size: clamp(1.25rem, 2.5vw, 1.55rem);
+    margin-bottom: 0.75rem;
+  }
+
+  section p,
+  section li {
+    color: var(--ink);
+  }
+
+  section p {
+    max-width: none;
+  }
+
+  section ul {
+    margin: 0 0 1em;
+    padding-left: 1.25rem;
+    max-width: none;
+  }
+
+  section li {
+    margin-bottom: 0.65rem;
+  }
+
+  section li::marker {
+    color: var(--blush-ink);
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    word-break: break-all;
+  }
+
+  .controller {
+    margin-top: 1.5rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+</style>

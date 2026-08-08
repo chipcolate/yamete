@@ -1,10 +1,12 @@
 ---
-// The app's Monitor view, rebuilt in SVG from its own tokens rather than screenshotted:
-// app/src/styles.css:1-33 for the scope colours, app/src/scope.ts:106-108 for the tier
-// strokes, and the tier bands from crates/yamete-dsp/src/config.rs. Drawn with the same
-// recorded slap the hero uses, so it is showing real data at real amplitudes.
+
 import data from "../data/traces.json";
 import { type Trace, line, area, CHART } from "../lib/chart";
+import { getStrings, type Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).appPanel;
 
 const slap = (data.traces as Trace[]).find((t) => t.id === "slap")!;
 
@@ -18,26 +20,22 @@ const TIERS = [
 ];
 const floor = H - CHART.pad;
 const yFor = (g: number) => floor - (g / FULL_G) * (floor - CHART.pad);
-
-// Where the impact lands in the window, as a fraction — the detection marker goes here.
 const hitAt = (slap.accel.indexOf(Math.max(...slap.accel)) / (slap.accel.length - 1)) * CHART.w;
 
 const NAV = [
-  { glyph: "◠", label: "Monitor" },
-  { glyph: "◎", label: "Detection" },
-  { glyph: "▶", label: "Actions" },
-  { glyph: "◆", label: "About" },
+  { glyph: "◠", label: s.navMonitor },
+  { glyph: "◎", label: s.navDetection },
+  { glyph: "▶", label: s.navActions },
+  { glyph: "◆", label: s.navAbout },
 ];
 ---
 
+
 <section id="app">
   <div class="wrap">
-    <p class="eyebrow">The app</p>
-    <h2>It lives in the menu bar</h2>
-    <p class="lede">
-      Opening it starts detection, quitting it stops detection. The daemon does the real
-      work over a unix socket; the window is a controller that attaches to it.
-    </p>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2>{s.heading}</h2>
+    <p class="lede">{s.lede}</p>
 
     <div class="split">
       <div class="window card" role="img" aria-label="The Monitor view: a live oscilloscope showing acceleration and rotation, with severity bands and a detection marker">
@@ -85,8 +83,8 @@ const NAV = [
           </svg>
 
           <div class="legend mono">
-            <span class="lg lg--a">acceleration</span>
-            <span class="lg lg--g">rotation</span>
+            <span class="lg lg--a">{s.acceleration}</span>
+            <span class="lg lg--g">{s.rotation}</span>
             <span class="lg lg--t">severity bands</span>
           </div>
         </div>

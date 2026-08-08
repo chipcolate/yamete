@@ -1,0 +1,26 @@
+---
+import Hero from "./Hero.astro";
+import Discriminator from "./Discriminator.astro";
+import Sensitivity from "./Sensitivity.astro";
+import Actions from "./Actions.astro";
+import AppPanel from "./AppPanel.astro";
+import Privacy from "./Privacy.astro";
+import Install from "./Install.astro";
+import More from "./More.astro";
+import Footer from "./Footer.astro";
+import type { Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+---
+<Hero lang={lang} />
+<main>
+  <Discriminator lang={lang} />
+  <Sensitivity lang={lang} />
+  <Actions lang={lang} />
+  <AppPanel lang={lang} />
+  <Privacy lang={lang} />
+  <Install lang={lang} />
+  <More lang={lang} />
+</main>
+<Footer lang={lang} path="" />

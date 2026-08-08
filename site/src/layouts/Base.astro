@@ -5,23 +5,50 @@ import "@fontsource/zen-kaku-gothic-new/latin-500.css";
 import "@fontsource/martian-mono/latin-400.css";
 import "@fontsource/martian-mono/latin-600.css";
 import "../styles/base.css";
+import { DEFAULT_LOCALE, SITE_LOCALES, localeUrl, type Locale } from "../i18n";
 
 interface Props {
   title: string;
   description: string;
+  lang?: Locale;
 }
-const { title, description } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, "");
+const { title, description, lang = DEFAULT_LOCALE } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, "") || new URL("/", Astro.site).href;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {
+      SITE_LOCALES.map((loc) => {
+        // Reconstruct path without locale prefix for hreflang alternates.
+        let path = Astro.url.pathname.replace(/\/$/, "");
+        for (const l of SITE_LOCALES) {
+          if (l === DEFAULT_LOCALE) continue;
+          if (path === `/${l}`) {
+            path = "";
+            break;
+          }
+          if (path.startsWith(`/${l}/`)) {
+            path = path.slice(l.length + 1);
+            break;
+          }
+        }
+        path = path.replace(/^\//, "");
+        const href = new URL(localeUrl(loc, path), Astro.site).href;
+        return <link rel="alternate" hreflang={loc} href={href} />;
+      })
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(localeUrl(DEFAULT_LOCALE, ""), Astro.site).href}
+    />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
     <meta name="theme-color" content="#ffdac7" />
@@ -33,6 +60,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, ""
     <meta property="og:image" content={new URL("/og.png", Astro.site).href} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={lang} />
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>

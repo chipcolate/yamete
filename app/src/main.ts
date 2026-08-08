@@ -3,6 +3,19 @@ import { listen } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import { Scope } from "./scope";
+import {
+  applyPreference,
+  applyDom,
+  t,
+  getPreference,
+  setPreference,
+  APP_LANGUAGES,
+  LANGUAGE_LABELS,
+  type LanguagePreference,
+} from "./i18n";
+
+applyPreference();
+applyDom();
 import type { Action, DaemonConfig, Slap, Status, Telemetry } from "./types";
 import * as actions from "./actions";
 import type { ActionId } from "./actions";
@@ -61,13 +74,11 @@ function render() {
   $<HTMLInputElement>("volume-range").value = String(swing);
   $("volume-range-out").textContent = `± ${swing.toFixed(0)}%`;
   $("range-wrap").hidden = !scaling;
-  $("scale-hint").textContent = scaling
-    ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
-    : "Off: sounds play at your system volume.";
+  $("scale-hint").textContent = scaling ? t("scaleOn") : t("scaleOff");
 
   $<HTMLInputElement>("lowpower").checked = config.report_interval_us >= 2000;
 
-  $("toggle").textContent = config.enabled ? "Pause detection" : "Resume detection";
+  $("toggle").textContent = config.enabled ? t("pauseDetection") : t("resumeDetection");
 
   scope.setTiers(d.tiers);
   renderActionPages();
@@ -75,14 +86,13 @@ function render() {
 }
 
 /** Plain-language summary, from the measured sweep over the recorded corpus. */
-/** Character strings aligned with `site/src/data/sensitivity.json` (replayed corpus). */
 function describeSensitivity(value: number): string {
-  if (value <= 0.25) return "Only a deliberate whack registers.";
-  if (value <= 0.4) return "Firm slaps only — never fires by accident.";
-  if (value <= 0.55) return "Balanced. Catches most slaps, ignores typing and the desk.";
-  if (value <= 0.7) return "Catches almost everything — desk bumps start to get through.";
-  if (value <= 0.85) return "Twitchy — desk knocks fire often.";
-  return "Anything that shakes the desk counts.";
+  if (value <= 0.25) return t("sensDeliberate");
+  if (value <= 0.4) return t("sensFirm");
+  if (value <= 0.55) return t("sensBalanced");
+  if (value <= 0.7) return t("sensAlmost");
+  if (value <= 0.85) return t("sensTwitchy");
+  return t("sensAnything");
 }
 
 /** Formats the decoder understands; anything else would fail to load. */
@@ -158,7 +168,7 @@ function renderNav() {
     const item = document.createElement("button");
     item.className = "nav-item";
     item.dataset.section = id;
-    item.textContent = actions.ACTION_LABELS[id];
+    item.textContent = id === "sound" ? t("actionSound") : id === "webhook" ? t("actionWebhook") : t("actionExec");
     item.addEventListener("click", () => showSection(id));
     host.append(item);
   }
@@ -198,7 +208,7 @@ function renderCommon(id: ActionId) {
   }
   const tierLabel = document.createElement("label");
   tierLabel.className = "field-label";
-  tierLabel.textContent = "Fires on";
+  tierLabel.textContent = t("firesOn");
   host.append(tierLabel, tierRow);
 
   host.append(
@@ -320,7 +330,7 @@ function renderSoundList(paths: string[]) {
   if (paths.length === 0) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = "No sounds yet — add one.";
+    li.textContent = t("noSounds");
     host.append(li);
     return;
   }
@@ -364,7 +374,7 @@ function facts(host: HTMLElement, rows: Array<[string, string]>) {
 }
 
 function renderStatus(status: Status) {
-  $("status-text").textContent = status.enabled ? "detecting" : "paused";
+  $("status-text").textContent = status.enabled ? t("detecting") : t("paused");
 
   facts($("facts"), [
     ["Slaps", String(status.slaps)],
@@ -516,8 +526,8 @@ $("scale-volume").addEventListener("change", (e) => {
   if (action.kind.type === "sound") action.kind.scale_with_intensity = on;
   $("range-wrap").hidden = !on;
   $("scale-hint").textContent = on
-    ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
-    : "Off: sounds play at your system volume.";
+    ? t("scaleOn")
+    : t("scaleOff");
   pushConfig();
 });
 
@@ -606,8 +616,7 @@ listen<Status>("status", (event) => renderStatus(event.payload));
 listen<Slap>("slap", (event) => {
   const slap = event.payload;
   scope.markSlap(slap.tier);
-  $("last-slap").textContent =
-    `${slap.tier} · ${slap.peak_g.toFixed(3)} g · ${slap.gyro_peak.toFixed(0)}°/s`;
+  $("last-slap").textContent = t("lastSlap", { tier: slap.tier, g: slap.peak_g.toFixed(2) });
 });
 
 /** Single place that reflects connection state, so events and polling can't disagree. */
@@ -618,12 +627,13 @@ function setConnected(connected: boolean) {
   if (connected) {
     // Never leave the initial placeholder on screen once we know we're connected;
     // renderStatus will replace this with the real state a moment later.
-    if ($("status-text").textContent === "connecting…") {
-      $("status-text").textContent = "connected";
+    if ($("status-text").textContent === t("connecting") || $("status-text").dataset.i18n === "connecting") {
+      $("status-text").textContent = t("connected");
+      $("status-text").removeAttribute("data-i18n");
     }
   } else {
-    $("status-text").textContent = "yamete not running";
-    $("scope-empty").textContent = "waiting for the daemon…";
+    $("status-text").textContent = t("notRunning");
+    $("scope-empty").textContent = t("waitingDaemon");
     $("scope-empty").hidden = false;
   }
 }
@@ -708,3 +718,29 @@ void (async () => {
 
   requestAnimationFrame(frame);
 })();
+
+
+function fillLanguageSelect() {
+  const sel = document.getElementById("language") as HTMLSelectElement | null;
+  if (!sel) return;
+  const pref = getPreference();
+  sel.innerHTML = "";
+  const sys = document.createElement("option");
+  sys.value = "system";
+  sys.textContent = t("languageSystem");
+  sel.appendChild(sys);
+  for (const code of APP_LANGUAGES) {
+    const o = document.createElement("option");
+    o.value = code;
+    o.textContent = LANGUAGE_LABELS[code];
+    sel.appendChild(o);
+  }
+  sel.value = pref;
+  sel.onchange = () => {
+    setPreference(sel.value as LanguagePreference);
+    applyDom();
+    fillLanguageSelect();
+    if (config) render();
+  };
+}
+fillLanguageSelect();

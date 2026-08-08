@@ -1,7 +1,4 @@
 ---
-// The signature element. Two buttons replay two real recordings through the same pair of
-// panels on the same axes, and the one the detector throws away is visibly the bigger
-// impact. Every number shown is measured — see site/scripts/extract-traces.mjs.
 import data from "../data/traces.json";
 import {
   type Trace,
@@ -11,20 +8,26 @@ import {
   GYRO_FULL_SCALE_DPS,
   CHART,
 } from "../lib/chart";
+import { format, getStrings, type Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).slapTest;
 
 const traces = data.traces as Trace[];
 const shown = ["slap", "desk-bump"].map((id) => traces.find((t) => t.id === id)!);
 const slap = shown.find((t) => t.id === "slap")!;
 const desk = shown.find((t) => t.id === "desk-bump")!;
-// Same peaks the charts plot — never re-type a percentage that can drift from the data.
 const deskLargerByPct = Math.round((desk.peak_g / slap.peak_g - 1) * 100);
+
+const verdictLabel = (v: string) => (v === "fires" ? s.fires : s.ignored);
 ---
 
 <div class="slaptest">
-  <div class="controls" role="group" aria-label="Replay a recording">
-    <button type="button" class="tap" data-play="slap" aria-pressed="true">Slap the lid</button>
+  <div class="controls" role="group" aria-label={s.ariaReplay}>
+    <button type="button" class="tap" data-play="slap" aria-pressed="true">{s.slapLid}</button>
     <button type="button" class="tap" data-play="desk-bump" aria-pressed="false">
-      Bump the desk
+      {s.bumpDesk}
     </button>
   </div>
 
@@ -34,7 +37,7 @@ const deskLargerByPct = Math.round((desk.peak_g / slap.peak_g - 1) * 100);
         <div class="trace" data-trace={t.id} hidden={t.id !== "slap"}>
           <div class="panel">
             <div class="panel__head">
-              <span class="mono key">acceleration</span>
+              <span class="mono key">{s.acceleration}</span>
               <span class="mono tick">{ACCEL_FULL_SCALE_G} g</span>
             </div>
             <svg
@@ -62,7 +65,7 @@ const deskLargerByPct = Math.round((desk.peak_g / slap.peak_g - 1) * 100);
 
           <div class="panel panel--gyro">
             <div class="panel__head">
-              <span class="mono key">rotation</span>
+              <span class="mono key">{s.rotation}</span>
               <span class="mono tick">{GYRO_FULL_SCALE_DPS} °/s</span>
             </div>
             <svg
@@ -97,17 +100,14 @@ const deskLargerByPct = Math.round((desk.peak_g / slap.peak_g - 1) * 100);
           <p class="verdict" data-verdict={t.id} hidden={t.id !== "slap"}>
             <span class="mono num">{t.peak_g.toFixed(2)} g</span>
             <span class="mono num num--gyro">{t.gyro_peak.toFixed(1)} °/s</span>
-            <span class={`chip chip--${t.verdict}`}>{t.verdict}</span>
+            <span class={`chip chip--${t.verdict}`}>{verdictLabel(t.verdict)}</span>
           </p>
         ))
       }
     </figcaption>
   </figure>
 
-  <p class="footnote">
-    Two real recordings, drawn on the same axes. The desk bump is the larger impact by
-    {deskLargerByPct} % and the detector throws it away — it barely rotates the machine.
-  </p>
+  <p class="footnote">{format(s.footnote, { pct: deskLargerByPct })}</p>
 </div>
 
 <style>

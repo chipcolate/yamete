@@ -1,9 +1,11 @@
 ---
-// Why this is harder than a threshold on "how hard". Four recordings placed on the two
-// axes the detector cares about — the slap is the only one high up, and it is not the one
-// furthest right.
 import data from "../data/traces.json";
 import { type Trace, ACCEL_FULL_SCALE_G, GYRO_FULL_SCALE_DPS } from "../lib/chart";
+import { getStrings, type Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).discriminator;
 
 const traces = data.traces as Trace[];
 const order = ["desk-bump", "slap", "trackpad", "typing"];
@@ -14,7 +16,6 @@ const points = order.map((id) => {
     ...t,
     x,
     y: Math.min(t.gyro_peak / GYRO_FULL_SCALE_DPS, 1) * 100,
-    // A label to the right of a point past halfway would run out of the card.
     side: x > 55 ? "left" : "right",
   };
 });
@@ -22,17 +23,14 @@ const points = order.map((id) => {
 
 <section id="how">
   <div class="wrap">
-    <p class="eyebrow">The discriminator</p>
-    <h2>The hardest hit is the one to throw away</h2>
-    <p class="lede">
-      A knock through the desk shakes the machine more than a slap on the lid does. Sort by
-      how hard and you build something that fires at furniture.
-    </p>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2>{s.heading}</h2>
+    <p class="lede">{s.lede}</p>
 
     <div class="split">
       <figure class="plot card">
         <div class="plot__frame">
-          <span class="mono ylab">rotation, °/s</span>
+          <span class="mono ylab">{s.axisRotation}</span>
           <div class="field">
             {
               points.map((p) => (
@@ -48,34 +46,11 @@ const points = order.map((id) => {
             }
             <span class="mono corner corner--y">{GYRO_FULL_SCALE_DPS}</span>
             <span class="mono corner corner--x">{ACCEL_FULL_SCALE_G} g</span>
-            <span class="mono corner corner--o">0</span>
           </div>
-          <span class="mono xlab">acceleration, g</span>
+          <span class="mono xlab">g</span>
         </div>
-        <figcaption class="mono cap">
-          Four recordings from the corpus, at their peaks
-        </figcaption>
+        <figcaption class="mono">{s.caption}</figcaption>
       </figure>
-
-      <div class="prose">
-        <p>
-          Striking the lid twists it about the hinge, so the gyroscope sees a large
-          rotation. A knock through the desk mostly slides the whole machine, and a
-          trackpad click barely moves it at all — both stay flat on the rotation axis.
-        </p>
-        <p>
-          Neither axis works alone. Sort by acceleration and the desk bump outranks every
-          slap. Sort by rotation alone and a trackpad click looks respectable, because it
-          rotates about as much per unit of force as a slap does — it is simply tiny. The
-          detector has to read both, and it does that with five statistics voting on
-          whether the moment was an impact at all, then amplitude deciding how hard.
-        </p>
-        <p class="aside">
-          The thresholds were measured, not guessed. The obvious-looking constants for this
-          problem sit below this machine's noise floor: a 0.005 g micro-shock floor lands
-          around the 95th percentile of an <em>idle</em> laptop.
-        </p>
-      </div>
     </div>
   </div>
 </section>

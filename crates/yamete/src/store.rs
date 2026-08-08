@@ -68,14 +68,14 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("spank-store-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-store-{}-{name}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         dir.join("config.json")
     }
 
     #[test]
     fn a_missing_file_is_not_an_error() {
-        let (config, warning) = load(Path::new("/nonexistent/spank/config.json"));
+        let (config, warning) = load(Path::new("/nonexistent/yamete/config.json"));
         assert_eq!(config, DaemonConfig::default());
         assert!(warning.is_none(), "first run should not warn");
     }
@@ -121,12 +121,12 @@ mod tests {
 
     #[test]
     fn saving_creates_missing_directories() {
-        let dir = std::env::temp_dir().join(format!("spank-mkdir-{}/a/b", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-mkdir-{}/a/b", std::process::id()));
         let path = dir.join("config.json");
         save(&path, &DaemonConfig::default()).unwrap();
         assert!(path.exists());
         std::fs::remove_dir_all(
-            std::env::temp_dir().join(format!("spank-mkdir-{}", std::process::id())),
+            std::env::temp_dir().join(format!("yamete-mkdir-{}", std::process::id())),
         )
         .ok();
     }

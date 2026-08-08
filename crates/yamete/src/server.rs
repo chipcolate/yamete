@@ -2,7 +2,7 @@
 //!
 //! Newline-delimited JSON over a unix domain socket. Clients connect, optionally subscribe
 //! to slaps and/or telemetry, and can read or replace the configuration. Debuggable with
-//! `nc -U ~/Library/Application\ Support/com.chipcolate.yamete/spank.sock`.
+//! `nc -U ~/Library/Application\ Support/com.chipcolate.yamete/yamete.sock`.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -368,7 +368,7 @@ mod tests {
     }
 
     fn harness(name: &str) -> Harness {
-        let dir = std::env::temp_dir().join(format!("spank-sock-{}-{name}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-sock-{}-{name}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let (config, config_rx) = watch::channel(DaemonConfig::default());
         let (events, _) = broadcast::channel(64);

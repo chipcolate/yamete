@@ -173,7 +173,7 @@ enum Command {
 /// launchd captures. In the foreground they are for a human reading along.
 fn init_logging(as_daemon: bool) {
     use tracing_subscriber::EnvFilter;
-    let filter = EnvFilter::try_from_env("SPANK_LOG").unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter = EnvFilter::try_from_env("YAMETE_LOG").unwrap_or_else(|_| EnvFilter::new("info"));
     let builder = tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_writer(std::io::stderr);

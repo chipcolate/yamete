@@ -132,11 +132,11 @@ async function testAction(id: ActionId) {
 
 /** UI-only preference; the daemon has no opinion about what the user is allowed to see. */
 function advancedUnlocked(): boolean {
-  return localStorage.getItem("spank.advanced") === "1";
+  return localStorage.getItem("yamete.advanced") === "1";
 }
 
 function setAdvanced(on: boolean) {
-  localStorage.setItem("spank.advanced", on ? "1" : "0");
+  localStorage.setItem("yamete.advanced", on ? "1" : "0");
   $("exec-row").hidden = !on;
   // Turning the gate off does not disable a command that is already running — that would
   // be a surprising thing for a visibility switch to do — but it does hide its editor.

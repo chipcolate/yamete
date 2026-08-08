@@ -350,11 +350,11 @@ fn template_vars(slap: &Slap) -> BTreeMap<&'static str, String> {
     v
 }
 
-/// The same values as `SPANK_*` environment variables, for shell one-liners.
+/// The same values as `YAMETE_*` environment variables, for shell one-liners.
 fn env_vars(slap: &Slap) -> Vec<(String, String)> {
     template_vars(slap)
         .into_iter()
-        .map(|(k, v)| (format!("SPANK_{}", k.to_uppercase()), v))
+        .map(|(k, v)| (format!("YAMETE_{}", k.to_uppercase()), v))
         .collect()
 }
 
@@ -614,11 +614,11 @@ mod tests {
     #[test]
     fn env_vars_are_prefixed_and_uppercased() {
         let env: BTreeMap<String, String> = env_vars(&slap(0.8)).into_iter().collect();
-        assert_eq!(env["SPANK_TIER"], "major");
-        assert_eq!(env["SPANK_INTENSITY"], "0.800");
-        assert_eq!(env["SPANK_GYRO_RATIO"], "512.2");
+        assert_eq!(env["YAMETE_TIER"], "major");
+        assert_eq!(env["YAMETE_INTENSITY"], "0.800");
+        assert_eq!(env["YAMETE_GYRO_RATIO"], "512.2");
         // Nothing unprefixed leaks into the child's environment.
-        assert!(env.keys().all(|k| k.starts_with("SPANK_")));
+        assert!(env.keys().all(|k| k.starts_with("YAMETE_")));
     }
 
     #[test]

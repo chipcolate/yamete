@@ -407,7 +407,7 @@ mod tests {
     fn the_generated_plist_parses_as_a_real_plist() {
         // The authority on whether this is valid is macOS itself, not our string builder.
         let text = plist(Path::new("/usr/local/bin/yamete"), Path::new("/tmp/logs"));
-        let tmp = std::env::temp_dir().join(format!("spank-plist-{}.plist", std::process::id()));
+        let tmp = std::env::temp_dir().join(format!("yamete-plist-{}.plist", std::process::id()));
         std::fs::write(&tmp, &text).unwrap();
 
         let out = Command::new("/usr/bin/plutil")
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn replacing_a_binary_unlinks_rather_than_overwriting() {
-        let dir = std::env::temp_dir().join(format!("spank-replace-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-replace-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let src = dir.join("new");
         let dest = dir.join("installed");
@@ -468,14 +468,14 @@ mod tests {
 
     #[test]
     fn replacing_into_a_missing_directory_creates_it() {
-        let dir = std::env::temp_dir().join(format!("spank-mk-{}/a/b", std::process::id()));
-        let src = std::env::temp_dir().join(format!("spank-src-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("yamete-mk-{}/a/b", std::process::id()));
+        let src = std::env::temp_dir().join(format!("yamete-src-{}", std::process::id()));
         std::fs::write(&src, b"x").unwrap();
         replace_binary(&src, &dir.join("yamete")).unwrap();
         assert!(dir.join("yamete").exists());
         std::fs::remove_file(&src).ok();
         std::fs::remove_dir_all(
-            std::env::temp_dir().join(format!("spank-mk-{}", std::process::id())),
+            std::env::temp_dir().join(format!("yamete-mk-{}", std::process::id())),
         )
         .ok();
     }

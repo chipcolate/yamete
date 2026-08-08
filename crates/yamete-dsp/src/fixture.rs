@@ -57,7 +57,7 @@ pub enum ParseError {
     },
     #[error("{path} is not valid UTF-8")]
     NotUtf8 { path: String },
-    #[error("not a spank fixture: missing the `{MAGIC}` header")]
+    #[error("not a yamete fixture: missing the `{MAGIC}` header")]
     BadMagic,
     #[error("line {line}: expected 5 comma-separated fields, found {found}")]
     FieldCount { line: usize, found: usize },

@@ -290,7 +290,7 @@ pub enum ActionKind {
 
     /// Run a program.
     ///
-    /// The slap is delivered twice over: as `SPANK_*` environment variables for shell
+    /// The slap is delivered twice over: as `YAMETE_*` environment variables for shell
     /// one-liners, and as a JSON object on stdin for anything that wants the full event.
     /// That second path is what makes an external script — a Bun/TS program, say — a
     /// first-class action without the daemon needing to know anything about it.

@@ -85,7 +85,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("error while building spank")
+        .expect("error while building yamete")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
                 // Quitting the app stops detection: the daemon is ours, so it goes too.

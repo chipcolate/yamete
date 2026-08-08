@@ -1,0 +1,194 @@
+---
+/**
+ * Chipcolate family of projects — a noticeable exit ramp near the bottom of the landing
+ * page. Copy is paraphrased from each product's own site, not invented marketing.
+ */
+const projects = [
+  {
+    name: "Tesserone",
+    href: "https://tesserone.com",
+    logo: "/more/tesserone.svg",
+    logoClass: "logo--square",
+    tag: "Mobile",
+    blurb:
+      "Your loyalty cards. On your phone. That's it. Local-first wallet with no cloud, no accounts, and no tracking — open source under Apache 2.0.",
+  },
+  {
+    name: "Makolate",
+    href: "https://makolate.store",
+    logo: "/more/makolate.svg",
+    logoClass: "logo--square",
+    tag: "Objects",
+    blurb:
+      "Your touch, on objects that last. Logo, name or QR on real things made to order — from a single piece, no minimums.",
+  },
+  {
+    name: "Eighty-Six",
+    href: "https://eighty-six.tech/en/",
+    logo: "/more/eighty-six-favicon.svg",
+    logoClass: "logo--square",
+    tag: "Restaurants",
+    blurb:
+      "Your brand comes first. Commission-free restaurant bookings, white-label guest pages, and guest data that stays yours — 86 the middlemen.",
+  },
+  {
+    name: "Chipcolate",
+    href: "https://chipcolate.com",
+    logo: "/more/chipcolate.png",
+    logoClass: "logo--wide",
+    tag: "Studio",
+    blurb:
+      "Who we are. Hardcore engineering and first-principles thinking — hardware, software and infrastructure, without the politics.",
+  },
+] as const;
+---
+
+<section id="more" aria-labelledby="more-heading">
+  <div class="wrap">
+    <p class="eyebrow">Also from Chipcolate</p>
+    <h2 id="more-heading">Like what you see here?</h2>
+    <p class="lede">
+      Check out our other projects and products — same studio, different surfaces. Built
+      with the same preference for ownership, clarity, and tools that stay out of the way.
+    </p>
+
+    <ul class="grid">
+      {
+        projects.map((p) => (
+          <li>
+            <a class="card project" href={p.href} rel="noopener noreferrer">
+              <div class="project__top">
+                <span class={`logo ${p.logoClass}`}>
+                  <img src={p.logo} alt="" width="64" height="64" loading="lazy" decoding="async" />
+                </span>
+                <span class="mono tag">{p.tag}</span>
+              </div>
+              <h3>{p.name}</h3>
+              <p>{p.blurb}</p>
+              <span class="go mono">
+                {p.href.replace(/^https:\/\//, "").replace(/\/$/, "")}
+                <span aria-hidden="true"> →</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  #more {
+    /* Slightly denser than the product sections so the family of cards reads as a unit. */
+    padding-block: clamp(3.5rem, 9vw, 6.5rem);
+    border-top: 1.5px solid var(--ink);
+  }
+
+  .lede {
+    max-width: 58ch;
+  }
+
+  .grid {
+    list-style: none;
+    margin: 2.75rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+
+  @media (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .project {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.5rem 1.55rem 1.4rem;
+    text-decoration: none;
+    color: inherit;
+    transition:
+      transform 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  .project:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 rgb(56 24 37 / 0.16);
+  }
+
+  .project:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 rgb(56 24 37 / 0.14);
+  }
+
+  .project__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.15rem;
+    min-height: 3.25rem;
+  }
+
+  .logo {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+
+  .logo img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: 3rem;
+    max-width: 9rem;
+    object-fit: contain;
+  }
+
+  .logo--square img {
+    width: 3rem;
+    height: 3rem;
+    max-width: 3rem;
+  }
+
+  .logo--wide img {
+    height: 2rem;
+    max-width: min(100%, 11rem);
+  }
+
+  .tag {
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .project h3 {
+    margin: 0 0 0.55rem;
+    font-size: 1.35rem;
+  }
+
+  .project p {
+    margin: 0;
+    flex: 1;
+    max-width: none;
+    font-size: 0.98rem;
+    color: var(--muted);
+  }
+
+  .go {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 1.25rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+</style>

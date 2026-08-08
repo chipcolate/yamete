@@ -161,3 +161,9 @@ skips rather than fails when `fixtures/` is empty, so a fresh clone still passes
 dominated by the quiet 98 % of it and say nothing about whether a threshold is *reachable*;
 sampling the detectors at the moment one fires is what tells you whether a statistic
 contributes at all.
+
+## License
+
+Apache License 2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
+
+Copyright 2026 CHIPCOLATE SRL.

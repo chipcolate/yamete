@@ -1,36 +1,28 @@
 ---
-// Three action kinds exist and no more: sound, webhook, run a command. There is no
-// notification action and no native Shortcuts action — Shortcuts are reached through the
-// webhook or the command. See crates/yamete-proto/src/config.rs.
+import { getStrings, type Locale } from "../i18n";
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).actions;
 ---
 
 <section id="actions">
   <div class="wrap">
-    <p class="eyebrow">Actions</p>
-    <h2>Then something happens</h2>
-    <p class="lede">
-      Three kinds of response, each filtered by how hard the hit was. Every one of them can
-      read the slap it is responding to.
-    </p>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2>{s.heading}</h2>
+    <p class="lede">{s.lede}</p>
 
     <div class="recipes">
       <article class="recipe card">
-        <h3>Play a sound</h3>
-        <p>
-          Point it at files or a whole folder and it picks one each time, in order or at
-          random, never the same one twice running. Volume can follow how hard you hit it.
-        </p>
+        <h3>{s.soundTitle}</h3>
+        <p>{s.soundBody}</p>
         <pre><code><span class="c"># out of the box</span>
 /System/Library/
   Sounds/<span class="v">Sosumi.aiff</span></code></pre>
       </article>
 
       <article class="recipe card">
-        <h3>Call a webhook</h3>
-        <p>
-          Any method, any headers, any body. The URL and the body are templated, so it can
-          talk to Home Assistant, a Shortcut or an IFTTT hook without special-casing.
-        </p>
+        <h3>{s.webhookTitle}</h3>
+        <p>{s.webhookBody}</p>
         <pre><code><span class="c"># POST body</span>
 &#123;
   "tier": "<span class="v">&#123;&#123;tier&#125;&#125;</span>",
@@ -39,35 +31,23 @@
       </article>
 
       <article class="recipe card">
-        <h3>Run a command</h3>
-        <p>
-          The slap arrives twice over: as environment variables for shell one-liners, and
-          as a JSON object on stdin for anything that would rather parse it.
-        </p>
+        <h3>{s.commandTitle}</h3>
+        <p>{s.commandBody}</p>
         <pre><code><span class="c">$</span> osascript -e "set volume 0"
 <span class="c">#</span> <span class="v">$YAMETE_TIER</span> → major
 <span class="c">#</span> <span class="v">$YAMETE_PEAK_G</span> → 0.52</code></pre>
-        <p class="mono meta">Behind an advanced switch</p>
+        <p class="mono meta">{s.advancedMeta}</p>
       </article>
     </div>
 
     <div class="pair">
       <div class="detail card card--quiet">
-        <h3>It waits 200 ms first</h3>
-        <p>
-          Detection is fast enough that a sound starts while the physical slap is still
-          audible, and gets partly masked by it. The response wants to land after the
-          impact, not on top of it. 200 ms was chosen by ear, and it is adjustable per
-          action.
-        </p>
+        <h3>{s.delayTitle}</h3>
+        <p>{s.delayBody}</p>
       </div>
       <div class="detail card card--quiet">
-        <h3>Severity and confidence are different questions</h3>
-        <p>
-          How many detectors agreed answers "was that an impact at all". How hard you hit
-          it is amplitude, and that alone decides whether an action tagged
-          <em>major</em> fires. Gating one on the other reported a real whack as a graze.
-        </p>
+        <h3>{s.severityTitle}</h3>
+        <p>{s.severityBody}</p>
       </div>
     </div>
   </div>

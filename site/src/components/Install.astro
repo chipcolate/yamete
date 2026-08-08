@@ -1,60 +1,51 @@
 ---
 import { CHECKSUMS, DOWNLOAD, REPO } from "../lib/site";
+import { getStrings, type Locale } from "../i18n";
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).install;
 ---
 
 <section id="install">
   <div class="wrap">
-    <p class="eyebrow">Install</p>
-    <h2>Whether your Mac can run it</h2>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2>{s.heading}</h2>
 
     <div class="split">
       <div class="reqs">
         <dl class="req">
-          <dt>Works on</dt>
-          <dd>
-            Apple Silicon <strong>laptops</strong> running macOS 13 or later — M2 and
-            later, plus M1 Pro and M1 Max.
-          </dd>
+          <dt>{s.worksOn}</dt>
+          <dd>{s.worksOnBody}</dd>
 
-          <dt>Has no sensor</dt>
-          <dd>
-            The M1 MacBook Pro (2020), the M1 Air, every desktop Mac and every Intel Mac.
-            <code>yamete probe</code> says so plainly rather than hanging.
-          </dd>
+          <dt>{s.noSensor}</dt>
+          <dd>{s.noSensorBody}</dd>
 
-          <dt>Asks for</dt>
-          <dd>
-            Input Monitoring, on first launch. macOS gates all HID access behind it,
-            including a motion sensor that is not an input device in any useful sense.
-          </dd>
+          <dt>{s.asksFor}</dt>
+          <dd>{s.asksForBody}</dd>
         </dl>
 
         <div class="cta">
-          <a class="btn" href={DOWNLOAD}>Download the DMG</a>
-          <a class="btn btn--ghost" href={CHECKSUMS}>Checksums</a>
+          <a class="btn" href={DOWNLOAD}>{s.download}</a>
+          <a class="btn btn--ghost" href={CHECKSUMS}>{s.checksums}</a>
         </div>
-        <p class="mono fine">
-          Signed and notarised · Apple Silicon · open the DMG and drag it across
-        </p>
+        <p class="mono fine">{s.fine}</p>
       </div>
 
       <div class="cli">
-        <h3>Or just the daemon</h3>
-        <p>
-          It runs happily without the app, which is how the detector was developed. A user
-          LaunchAgent keeps detection running with nothing on screen.
-        </p>
-        <pre><code><span class="c"># is the sensor there, at what rate, decoding correctly</span>
+        <h3>{s.daemonTitle}</h3>
+        <p>{s.daemonBody}</p>
+        <pre><code><span class="c"># probe</span>
 yamete probe
 
-<span class="c"># live detections, with the five detector scores</span>
+<span class="c"># watch</span>
 yamete watch --scores
 
-<span class="c"># run it permanently, independent of the app</span>
+<span class="c"># install</span>
 yamete install --copy</code></pre>
         <p class="src">
-          Everything — the detector, the corpus and the tuning tools — is at
-          <a href={REPO}>github.com/chipcolate/yamete</a>.
+          {s.src.split("github.com/chipcolate/yamete")[0]}
+          <a href={REPO}>github.com/chipcolate/yamete</a>
+          {s.src.split("github.com/chipcolate/yamete")[1] ?? ""}
         </p>
       </div>
     </div>

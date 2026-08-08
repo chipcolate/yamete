@@ -1,11 +1,14 @@
 ---
 import { Image } from "astro:assets";
-// The repository's own artwork, not a copy of it. Astro emits optimised webp variants at
-// build time, so nothing 860 KB reaches a browser.
 import icon from "../../../app-icon.png";
 import logotype from "../assets/yamete-logotype.svg?raw";
 import SlapTest from "./SlapTest.astro";
 import { DOWNLOAD, REPO } from "../lib/site";
+import { getStrings, type Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).hero;
 ---
 
 <header class="hero">
@@ -13,28 +16,24 @@ import { DOWNLOAD, REPO } from "../lib/site";
     <div class="hero__copy">
       <h1 class="lockup">
         <span class="kana" set:html={logotype} />
-        <span class="gloss">stop it</span>
+        <span class="gloss">{s.gloss}</span>
       </h1>
 
-      <p class="pitch">Slap detection for Apple Silicon MacBooks.</p>
-      <p class="sub">
-        Hit the laptop, it makes a noise. The interesting part is that it works at all —
-        the sensor is undocumented, invisible to CoreMotion, and telling a slap from
-        someone thumping the desk needs the gyroscope.
-      </p>
+      <p class="pitch">{s.pitch}</p>
+      <p class="sub">{s.sub}</p>
 
       <div class="cta">
-        <a class="btn" href={DOWNLOAD}>Download for Apple Silicon</a>
-        <a class="btn btn--ghost" href={REPO}>Source on GitHub</a>
+        <a class="btn" href={DOWNLOAD}>{s.download}</a>
+        <a class="btn btn--ghost" href={REPO}>{s.source}</a>
       </div>
-      <p class="mono requires">macOS 13+ · Apple Silicon laptops · M2 and later, or M1 Pro/Max</p>
+      <p class="mono requires">{s.requires}</p>
     </div>
 
     <div class="hero__art">
       <div class="laptop" data-laptop>
         <Image
           src={icon}
-          alt="The yamete app icon: a cartoon MacBook with a blushing face"
+          alt={s.iconAlt}
           widths={[280, 420, 560]}
           sizes="(max-width: 900px) 220px, 300px"
           loading="eager"
@@ -44,7 +43,7 @@ import { DOWNLOAD, REPO } from "../lib/site";
     </div>
   </div>
 
-  <div class="wrap"><SlapTest /></div>
+  <div class="wrap"><SlapTest lang={lang} /></div>
 </header>
 
 <style>

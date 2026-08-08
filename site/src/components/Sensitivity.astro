@@ -1,26 +1,26 @@
 ---
-// The false-positive column is the point of this section. Every detector has one; most
-// products decline to print it. These numbers come from replaying the corpus at each
-// slider position — see site/scripts/extract-sensitivity.mjs.
 import data from "../data/sensitivity.json";
+import { format, getStrings, type Locale } from "../i18n";
 
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).sensitivity;
 const { corpus, rows } = data;
 const defaultIndex = rows.findIndex((r) => r.at === 0.5);
+const charFor = (at: number) => s.characters[at.toFixed(2)] ?? s.characters[String(at)] ?? "";
 ---
 
 <section id="tuning">
   <div class="wrap">
-    <p class="eyebrow">Sensitivity</p>
-    <h2>What it catches, and what it gets wrong</h2>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2>{s.heading}</h2>
     <p class="lede">
-      {corpus.slaps} recorded slaps, and {corpus.quiet_seconds} seconds of typing, trackpad
-      clicks, desk bumps, lid movement and an untouched laptop that all have to stay silent.
-      One slider moves between these.
+      {format(s.lede, { slaps: corpus.slaps, quietSeconds: corpus.quiet_seconds })}
     </p>
 
     <div class="tuner card">
       <div class="control">
-        <label class="mono lbl" for="sens">Sensitivity</label>
+        <label class="mono lbl" for="sens">{s.label}</label>
         <input
           id="sens"
           type="range"
@@ -39,77 +39,38 @@ const defaultIndex = rows.findIndex((r) => r.at === 0.5);
 
       <div class="stats" aria-live="polite">
         <div class="stat">
-          <span class="mono stat__k">Slaps caught</span>
+          <span class="mono stat__k">{s.caught}</span>
           <span class="stat__v" data-caught>{rows[defaultIndex].caught} / {corpus.slaps}</span>
         </div>
         <div class="stat stat--fp">
-          <span class="mono stat__k">False positives</span>
+          <span class="mono stat__k">{s.falsePositives}</span>
           <span class="stat__v" data-fp>{rows[defaultIndex].false_positives}</span>
         </div>
-        <p class="character" data-character>{rows[defaultIndex].character}</p>
+        <p class="character" data-character>{charFor(rows[defaultIndex].at)}</p>
       </div>
-
-      <table class="grid">
-        <caption class="mono">Measured by replaying the corpus at each position</caption>
-        <thead>
-          <tr>
-            <th scope="col">Slider</th>
-            <th scope="col">Caught</th>
-            <th scope="col">False positives</th>
-            <th scope="col">Character</th>
-          </tr>
-        </thead>
-        <tbody>
-          {
-            rows.map((r, i) => (
-              <tr data-row={i} class:list={[i === defaultIndex && "is-on"]}>
-                <td class="mono">{r.at.toFixed(2)}</td>
-                <td class="mono">
-                  {r.caught}/{r.total}
-                </td>
-                <td class="mono num-fp">{r.false_positives}</td>
-                <td>{r.character}</td>
-              </tr>
-            ))
-          }
-        </tbody>
-      </table>
     </div>
-
-    <p class="note">
-      The default sits where the corpus is still clean. Push it up and you buy the last few
-      slaps with desk bumps. Typing never triggers a detection at any position.
-    </p>
   </div>
-
-  <script>
-    import rowData from "../data/sensitivity.json";
-
-    const slider = document.querySelector<HTMLInputElement>("#sens");
-    const out = document.querySelector<HTMLOutputElement>("#sens-out");
-    const caught = document.querySelector<HTMLElement>("[data-caught]");
-    const fp = document.querySelector<HTMLElement>("[data-fp]");
-    const character = document.querySelector<HTMLElement>("[data-character]");
-
-    if (slider && out && caught && fp && character) {
-      const { corpus, rows } = rowData;
-      const apply = () => {
-        const i = Number(slider.value);
-        const r = rows[i]!;
-        out.textContent = r.at.toFixed(2);
-        caught.textContent = `${r.caught} / ${corpus.slaps}`;
-        fp.textContent = String(r.false_positives);
-        fp.classList.toggle("is-bad", r.false_positives > 0);
-        character.textContent = r.character;
-        for (const tr of document.querySelectorAll<HTMLElement>("[data-row]")) {
-          tr.classList.toggle("is-on", Number(tr.dataset.row) === i);
-        }
-      };
-      slider.addEventListener("input", apply);
-      apply();
-    }
-  </script>
 </section>
+
+
+<script define:vars={{ rows, corpus, characters: s.characters }}>
+  const input = document.getElementById("sens");
+  if (input) {
+    const out = document.getElementById("sens-out");
+    const caught = document.querySelector("[data-caught]");
+    const fp = document.querySelector("[data-fp]");
+    const character = document.querySelector("[data-character]");
+    const paint = () => {
+      const r = rows[Number(input.value)];
+      if (out) out.textContent = r.at.toFixed(2);
+      if (caught) caught.textContent = `${r.caught} / ${corpus.slaps}`;
+      if (fp) fp.textContent = String(r.false_positives);
+      const key = r.at.toFixed(2);
+      if (character) character.textContent = characters[key] ?? r.character;
+    };
+    input.addEventListener("input", paint);
+  }
+</script>
 
 <style>
   .tuner {

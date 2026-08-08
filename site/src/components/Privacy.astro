@@ -1,44 +1,35 @@
 ---
-// Short landing beat for the local/private story. Full text lives at /privacy.
+import { getStrings, localeUrl, type Locale } from "../i18n";
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).privacySection;
 ---
 
 <section id="privacy" aria-labelledby="privacy-heading">
   <div class="wrap">
-    <p class="eyebrow">On your Mac</p>
-    <h2 id="privacy-heading">Nothing leaves unless you send it</h2>
-    <p class="lede">
-      Detection, config and logs stay in your home directory. There is no account, no
-      Chipcolate cloud, and no analytics SDK. The only network paths are ones you configure.
-    </p>
+    <p class="eyebrow">{s.eyebrow}</p>
+    <h2 id="privacy-heading">{s.heading}</h2>
+    <p class="lede">{s.lede}</p>
 
     <ul class="points">
       <li class="point card">
-        <p class="mono label">Local only</p>
-        <p>
-          Sensor samples are processed on-device. Optional scope telemetry is a local socket
-          stream to the menu bar app, off when nobody is watching.
-        </p>
+        <p class="mono label">{s.localTitle}</p>
+        <p>{s.localBody}</p>
       </li>
       <li class="point card">
-        <p class="mono label">No account</p>
-        <p>
-          No sign-up, no profile, no server we operate. Uninstall and delete a few paths
-          under <code>~/Library</code> and it is gone.
-        </p>
+        <p class="mono label">{s.accountTitle}</p>
+        <p>{s.accountBody}</p>
       </li>
       <li class="point card">
-        <p class="mono label">Your actions</p>
-        <p>
-          Sounds stay local. Webhooks and commands only talk to endpoints or programs
-          <em>you</em> set — never to us by default.
-        </p>
+        <p class="mono label">{s.actionsTitle}</p>
+        <p>{s.actionsBody}</p>
       </li>
     </ul>
 
     <p class="more">
-      <a href="/privacy">Full privacy policy</a>
+      <a href={localeUrl(lang, "privacy")}>{s.fullPolicy}</a>
       <span class="sep mono" aria-hidden="true">·</span>
-      <a href="/privacy#questions">Questions via GitHub Issues</a>
+      <a href={localeUrl(lang, "privacy") + "#questions"}>{s.questions}</a>
     </p>
   </div>
 </section>

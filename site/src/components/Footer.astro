@@ -1,26 +1,61 @@
 ---
 import { REPO } from "../lib/site";
+import {
+  SITE_LOCALES,
+  LOCALE_LABELS,
+  DEFAULT_LOCALE,
+  getStrings,
+  localeUrl,
+  type Locale,
+} from "../i18n";
+
+interface Props {
+  lang: Locale;
+  path?: string;
+}
+const { lang, path = "" } = Astro.props;
+const s = getStrings(lang).footer;
 ---
 
 <footer class="foot">
   <div class="wrap foot__grid">
-    <p class="claim">
-      Classic impact statistics, thresholds measured here. Other Mac slap projects were
-      checked against this machine; their published numbers sat below the noise floor and
-      none of their thresholds or code were adopted.
-    </p>
+    <p class="claim">{s.claim}</p>
     <nav class="links mono" aria-label="Elsewhere">
-      <a href={REPO}>GitHub</a>
-      <a href={`${REPO}/releases`}>Releases</a>
-      <a href="/privacy">Privacy</a>
-      <a href="https://chipcolate.com" rel="noopener noreferrer">Chipcolate</a>
-      <a href={`${REPO}/blob/main/README.md`}>README</a>
+      <a href={REPO}>{s.github}</a>
+      <a href={`${REPO}/releases`}>{s.releases}</a>
+      <a href={localeUrl(lang, "privacy")}>{s.privacy}</a>
+      <a href="https://chipcolate.com" rel="noopener noreferrer">{s.chipcolate}</a>
+      <a href={`${REPO}/blob/main/README.md`}>{s.readme}</a>
+      <label class="lang">
+        <span class="sr-only">{s.languageLabel}</span>
+        <select id="locale-switcher" data-path={path} data-default={DEFAULT_LOCALE}>
+          {
+            SITE_LOCALES.map((loc) => (
+              <option value={loc} selected={loc === lang}>
+                {LOCALE_LABELS[loc]}
+              </option>
+            ))
+          }
+        </select>
+      </label>
     </nav>
-    <p class="mono legal">
-      Apache-2.0 · © 2026 CHIPCOLATE SRL · やめて — stop it
-    </p>
+    <p class="mono legal">{s.legal}</p>
   </div>
 </footer>
+
+<script>
+  const select = document.getElementById("locale-switcher") as HTMLSelectElement | null;
+  if (select) {
+    const path = select.dataset.path ?? "";
+    const def = select.dataset.default ?? "en";
+    select.addEventListener("change", () => {
+      const loc = select.value;
+      const prefix = loc === def ? "" : `/${loc}`;
+      const suffix = path ? `/${path.replace(/^\//, "")}` : "";
+      window.location.href = `${prefix}${suffix}` || "/";
+    });
+  }
+</script>
 
 <style>
   .foot {

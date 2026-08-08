@@ -12,28 +12,28 @@
       <h1 data-tauri-drag-region>Yamete</h1>
       <div class="status">
         <span id="conn" class="dot" title="daemon connection"></span>
-        <span id="status-text">connecting…</span>
+        <span id="status-text" data-i18n="connecting">connecting…</span>
       </div>
     </header>
 
     <div class="shell">
       <nav id="nav" aria-label="Sections">
         <button class="nav-item is-active" data-section="monitor">
-          <span class="nav-glyph" aria-hidden="true">◠</span> Monitor
+          <span class="nav-glyph" aria-hidden="true">◠</span> <span data-i18n="navMonitor">Monitor</span>
         </button>
         <button class="nav-item" data-section="detection">
-          <span class="nav-glyph" aria-hidden="true">◎</span> Detection
+          <span class="nav-glyph" aria-hidden="true">◎</span> <span data-i18n="navDetection">Detection</span>
         </button>
         <button class="nav-item" data-section="actions">
-          <span class="nav-glyph" aria-hidden="true">▶</span> Actions
+          <span class="nav-glyph" aria-hidden="true">▶</span> <span data-i18n="navActions">Actions</span>
         </button>
         <!-- Sub-items for enabled actions are inserted here. -->
         <div id="nav-actions" class="nav-sub"></div>
         <button class="nav-item" data-section="about">
-          <span class="nav-glyph" aria-hidden="true">◆</span> About
+          <span class="nav-glyph" aria-hidden="true">◆</span> <span data-i18n="navAbout">About</span>
         </button>
         <div class="nav-foot">
-          <button id="toggle" class="wide">Pause detection</button>
+          <button id="toggle" class="wide" data-i18n="pauseDetection">Pause detection</button>
         </div>
       </nav>
 
@@ -42,21 +42,21 @@
         <section class="page is-active" data-page="monitor">
           <div class="scope-wrap">
             <canvas id="scope"></canvas>
-            <div id="scope-empty" class="scope-empty">waiting for the daemon…</div>
+            <div id="scope-empty" class="scope-empty" data-i18n="waitingDaemon">waiting for the daemon…</div>
           </div>
           <div class="legend">
-            <span><i class="swatch accel"></i>acceleration</span>
-            <span><i class="swatch gyro"></i>rotation</span>
+            <span><i class="swatch accel"></i><span data-i18n="acceleration">acceleration</span></span>
+            <span><i class="swatch gyro"></i><span data-i18n="rotation">rotation</span></span>
             <span id="last-slap" class="last-slap"></span>
           </div>
           <div class="legend">
-            <span class="legend-title">detected:</span>
-            <span><i class="swatch mark micro"></i>micro</span>
-            <span><i class="swatch mark medium"></i>medium</span>
-            <span><i class="swatch mark major"></i>major</span>
+            <span class="legend-title" data-i18n="detected">detected:</span>
+            <span><i class="swatch mark micro"></i><span data-i18n="micro">micro</span></span>
+            <span><i class="swatch mark medium"></i><span data-i18n="medium">medium</span></span>
+            <span><i class="swatch mark major"></i><span data-i18n="major">major</span></span>
           </div>
           <dl class="facts" id="facts"></dl>
-          <p class="hint">
+          <p class="hint" data-i18n="monitorHint">
             Dashed horizontal lines are the severity bands; vertical lines mark a
             detection. Slap the machine and watch where the spike lands relative to the
             bands — that is what the sensitivity slider moves.
@@ -66,29 +66,27 @@
         <!-- Detection -->
         <section class="page" data-page="detection">
           <label class="row" for="sensitivity">
-            <span>Sensitivity</span>
+            <span data-i18n="sensitivity">Sensitivity</span>
             <output id="sensitivity-out">0.50</output>
           </label>
           <input id="sensitivity" type="range" min="0" max="1" step="0.01" value="0.5" />
-          <p class="hint" id="sensitivity-hint">
-            Higher catches gentler taps and more desk bumps.
-          </p>
+          <p class="hint" id="sensitivity-hint"></p>
 
           <label class="row" for="cooldown">
-            <span>Cooldown</span>
+            <span data-i18n="cooldown">Cooldown</span>
             <output id="cooldown-out">0.75 s</output>
           </label>
           <input id="cooldown" type="range" min="0.1" max="3" step="0.05" value="0.75" />
-          <p class="hint">
+          <p class="hint" data-i18n="cooldownHint">
             Minimum gap between detections. One slap rings the chassis for a while; this
             keeps that from counting twice.
           </p>
 
           <label class="row checkbox">
             <input id="lowpower" type="checkbox" />
-            <span>Low power mode</span>
+            <span data-i18n="lowPower">Low power mode</span>
           </label>
-          <p class="hint">
+          <p class="hint" data-i18n="lowPowerHint">
             Reads the sensor at 402 Hz instead of 805 Hz, for about half the CPU. Same
             recall at slightly higher sensitivity, with a few more false positives.
           </p>
@@ -96,32 +94,32 @@
 
         <!-- Actions: what happens when a slap lands -->
         <section class="page" data-page="actions">
-          <p class="hint top">
+          <p class="hint top" data-i18n="actionsIntro">
             Turn on what a slap should do. Each one you enable gets its own section in the
             sidebar.
           </p>
 
           <label class="row checkbox">
             <input id="on-sound" type="checkbox" />
-            <span>Play a sound</span>
+            <span data-i18n="playSound">Play a sound</span>
           </label>
           <label class="row checkbox">
             <input id="on-webhook" type="checkbox" />
-            <span>Send an HTTP request</span>
+            <span data-i18n="sendHttp">Send an HTTP request</span>
           </label>
           <label class="row checkbox" id="exec-row" hidden>
             <input id="on-exec" type="checkbox" />
-            <span>Run a command</span>
+            <span data-i18n="runCommand">Run a command</span>
           </label>
 
           <hr />
           <label class="row checkbox">
             <input id="advanced" type="checkbox" />
-            <span>Advanced</span>
+            <span data-i18n="advanced">Advanced</span>
           </label>
-          <p class="hint">
+          <p class="hint" data-i18n="advancedHint">
             Unlocks running an arbitrary command on every slap. It receives the event as
-            JSON on stdin and as <code>YAMETE_*</code> environment variables, so it can do
+            JSON on stdin and as YAMETE_* environment variables, so it can do
             anything you can script — which is also why it is behind this switch.
           </p>
         </section>
@@ -129,33 +127,33 @@
         <!-- Sound -->
         <section class="page" data-page="sound">
           <div class="row">
-            <span class="section-title">Sound</span>
-            <button id="sound-test">Test</button>
+            <span class="section-title" data-i18n="sound">Sound</span>
+            <button id="sound-test" data-i18n="test">Test</button>
           </div>
           <div class="field">
             <div class="row">
-              <span>Sounds</span>
-              <button id="sound-pick">Add…</button>
+              <span data-i18n="sounds">Sounds</span>
+              <button id="sound-pick" data-i18n="add">Add…</button>
             </div>
             <ul class="filelist" id="sound-list"></ul>
           </div>
 
           <div id="order-wrap" hidden>
-            <label class="field-label" for="sound-order">When a slap lands</label>
+            <label class="field-label" for="sound-order" data-i18n="whenSlap">When a slap lands</label>
             <select id="sound-order">
-              <option value="sequential">Play them in order</option>
-              <option value="random">Pick one at random</option>
+              <option value="sequential" data-i18n="playInOrder">Play them in order</option>
+              <option value="random" data-i18n="pickRandom">Pick one at random</option>
             </select>
           </div>
 
           <label class="row checkbox">
             <input id="scale-volume" type="checkbox" />
-            <span>Vary volume with force</span>
+            <span data-i18n="varyVolume">Vary volume with force</span>
           </label>
-          <p class="hint" id="scale-hint">Off: sounds play at your system volume.</p>
+          <p class="hint" id="scale-hint" data-i18n="scaleOff">Off: sounds play at your system volume.</p>
           <div id="range-wrap" hidden>
             <label class="row" for="volume-range">
-              <span>Volume swing</span>
+              <span data-i18n="volumeSwing">Volume swing</span>
               <output id="volume-range-out">± 40%</output>
             </label>
             <input id="volume-range" type="range" min="0" max="100" step="5" value="40" />
@@ -167,14 +165,14 @@
         <!-- Webhook -->
         <section class="page" data-page="webhook">
           <div class="row">
-            <span class="section-title">HTTP request</span>
-            <button id="webhook-test">Test</button>
+            <span class="section-title" data-i18n="httpRequest">HTTP request</span>
+            <button id="webhook-test" data-i18n="test">Test</button>
           </div>
 
-          <label class="field-label" for="webhook-url">URL</label>
+          <label class="field-label" for="webhook-url" data-i18n="url">URL</label>
           <input id="webhook-url" type="text" placeholder="https://example.com/hook" />
 
-          <label class="field-label" for="webhook-method">Method</label>
+          <label class="field-label" for="webhook-method" data-i18n="method">Method</label>
           <select id="webhook-method">
             <option>POST</option>
             <option>GET</option>
@@ -183,23 +181,21 @@
             <option>DELETE</option>
           </select>
 
-          <label class="field-label" for="webhook-headers">Headers</label>
+          <label class="field-label" for="webhook-headers" data-i18n="headers">Headers</label>
           <textarea
             id="webhook-headers"
             rows="2"
             placeholder="Authorization: Bearer …&#10;one per line"
           ></textarea>
 
-          <label class="field-label" for="webhook-body">Body</label>
+          <label class="field-label" for="webhook-body" data-i18n="body">Body</label>
           <textarea
             id="webhook-body"
             rows="3"
-            placeholder="Leave empty to send the slap as JSON"
+            placeholder="Leave empty to send the slap as JSON" data-i18n-placeholder="bodyPlaceholder"
           ></textarea>
-          <p class="hint">
-            URL, headers and body accept <code>{{intensity}}</code>,
-            <code>{{tier}}</code>, <code>{{peak_g}}</code>, <code>{{gyro_peak}}</code> and
-            the other event fields.
+          <p class="hint" data-i18n="webhookHint">
+            URL, headers and body accept template fields.
           </p>
 
           <div class="common" data-action="webhook"></div>
@@ -208,29 +204,27 @@
         <!-- Exec -->
         <section class="page" data-page="exec">
           <div class="row">
-            <span class="section-title">Command</span>
-            <button id="exec-test">Test</button>
+            <span class="section-title" data-i18n="command">Command</span>
+            <button id="exec-test" data-i18n="test">Test</button>
           </div>
 
           <div class="field">
             <div class="row">
-              <span>Program</span>
-              <button id="exec-pick">Choose…</button>
+              <span data-i18n="program">Program</span>
+              <button id="exec-pick" data-i18n="choose">Choose…</button>
             </div>
             <p class="path" id="exec-path">—</p>
           </div>
 
-          <label class="field-label" for="exec-args">Arguments</label>
-          <textarea id="exec-args" rows="3" placeholder="one per line"></textarea>
+          <label class="field-label" for="exec-args" data-i18n="arguments">Arguments</label>
+          <textarea id="exec-args" rows="3" placeholder="one per line" data-i18n-placeholder="onePerLine"></textarea>
 
           <label class="row checkbox">
             <input id="exec-stdin" type="checkbox" />
-            <span>Send the slap as JSON on stdin</span>
+            <span data-i18n="sendJsonStdin">Send the slap as JSON on stdin</span>
           </label>
-          <p class="hint">
-            Arguments accept the same <code>{{…}}</code> placeholders. The event is also
-            in the environment as <code>YAMETE_TIER</code>, <code>YAMETE_INTENSITY</code>
-            and so on.
+          <p class="hint" data-i18n="execHint">
+            Arguments accept the same placeholders. The event is also in the environment.
           </p>
 
           <div class="common" data-action="exec"></div>
@@ -239,13 +233,16 @@
         <!-- About -->
         <section class="page" data-page="about">
           <dl class="facts" id="about-facts"></dl>
-          <p class="hint">
-            Detection runs while Yamete is open and stops when you quit it. The sensor is
-            the undocumented IMU behind the Sensor Processing Unit, read over IOKit HID.
+          <p class="hint" data-i18n="aboutHint">
+            Detection runs while Yamete is open and stops when you quit it.
           </p>
+          <label class="row" for="language">
+            <span data-i18n="language">Language</span>
+          </label>
+          <select id="language"></select>
           <div class="buttons">
-            <button id="logs" class="secondary">Show logs</button>
-            <button id="quit" class="secondary">Quit Yamete</button>
+            <button id="logs" class="secondary" data-i18n="showLogs">Show logs</button>
+            <button id="quit" class="secondary" data-i18n="quit">Quit Yamete</button>
           </div>
         </section>
       </main>

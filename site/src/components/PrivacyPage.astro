@@ -1,0 +1,65 @@
+---
+import Footer from "./Footer.astro";
+import { getStrings, localeUrl, type Locale } from "../i18n";
+
+interface Props { lang: Locale }
+const { lang } = Astro.props;
+const s = getStrings(lang).privacy;
+---
+
+<main class="doc">
+  <article class="wrap doc__article">
+    <a class="back mono" href={localeUrl(lang, "")}>{s.back}</a>
+    <h1>{s.title}</h1>
+    <p class="meta mono">{s.effectiveLabel}: {s.effectiveDate}</p>
+    {
+      s.sections.map((sec, i) => (
+        <section id={i === s.sections.length - 1 ? "questions" : undefined}>
+          <h2>{sec.title}</h2>
+          <div class="body" set:html={sec.body} />
+        </section>
+      ))
+    }
+  </article>
+</main>
+<Footer lang={lang} path="privacy" />
+
+<style>
+  .doc {
+    padding-block: clamp(2.5rem, 8vw, 5rem) var(--rhythm);
+    min-height: 100vh;
+  }
+  .doc__article { max-width: 42rem; }
+  .back {
+    display: inline-block;
+    margin-bottom: 2rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .back:hover { color: var(--ink); }
+  h1 {
+    font-size: clamp(2.1rem, 5vw, 3rem);
+    margin-bottom: 0.5rem;
+  }
+  .meta {
+    margin: 0 0 3rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  section { margin-bottom: 2.5rem; }
+  section h2 {
+    font-size: clamp(1.25rem, 2.5vw, 1.55rem);
+    margin-bottom: 0.75rem;
+  }
+  .body :global(p) { max-width: none; margin: 0 0 1em; }
+  .body :global(code) {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    word-break: break-all;
+  }
+  .body :global(a) { font-weight: 500; }
+</style>

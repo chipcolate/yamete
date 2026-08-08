@@ -28,7 +28,13 @@ const s = getStrings(lang).footer;
       <a href={`${REPO}/blob/main/README.md`}>{s.readme}</a>
       <label class="lang">
         <span class="sr-only">{s.languageLabel}</span>
-        <select id="locale-switcher" data-path={path} data-default={DEFAULT_LOCALE}>
+        <select
+          id="locale-switcher"
+          class="lang__select"
+          data-path={path}
+          data-default={DEFAULT_LOCALE}
+          aria-label={s.languageLabel}
+        >
           {
             SITE_LOCALES.map((loc) => (
               <option value={loc} selected={loc === lang}>
@@ -81,6 +87,8 @@ const s = getStrings(lang).footer;
   .links {
     grid-row: 1;
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 1.25rem;
     font-size: 0.68rem;
     letter-spacing: 0.08em;
@@ -93,6 +101,68 @@ const s = getStrings(lang).footer;
     font-size: 0.62rem;
     color: var(--muted);
     opacity: 0.8;
+  }
+
+  /* Pill control — same ink edge + full radius as .btn / slap-test taps. */
+  .lang {
+    display: inline-flex;
+    position: relative;
+    margin: 0;
+  }
+
+  .lang__select {
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+    padding: 0.35rem 1.7rem 0.35rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--ink);
+    background-color: rgb(255 255 255 / 0.55);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23381825' stroke-width='1.75' stroke-linecap='square' stroke-linejoin='miter'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.55rem center;
+    background-size: 0.65rem auto;
+    border: var(--edge);
+    border-radius: 999px;
+    box-shadow: var(--lift-sm);
+    cursor: pointer;
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      background-color 120ms ease;
+  }
+
+  .lang__select:hover {
+    background-color: rgb(255 255 255 / 0.85);
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 rgb(56 24 37 / 0.16);
+  }
+
+  .lang__select:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .lang__select:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 rgb(56 24 37 / 0.14);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   @media (max-width: 640px) {

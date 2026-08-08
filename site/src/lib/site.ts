@@ -1,9 +1,10 @@
 export const REPO = "https://github.com/chipcolate/yamete";
 
-/** Resolves to the newest release's DMG whatever the version is, so the page never
- *  needs editing at release time. 404s until the first `v*` tag is pushed. */
+/** Release landing page — picks up the newest `v*` tag. 404s until one exists. */
 export const DOWNLOAD = `${REPO}/releases/latest`;
-export const CHECKSUMS = `${REPO}/releases/latest`;
+
+/** Fixed asset name from release.yml; `/latest/download/` resolves to the current tag. */
+export const CHECKSUMS = `${REPO}/releases/latest/download/SHA256SUMS`;
 
 export const SITE = {
   title: "yamete — slap detection for Apple Silicon MacBooks",

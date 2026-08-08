@@ -10,19 +10,26 @@
 //   y[n] = a·(y[n-1] + x[n] − x[n-1]),  a = exp(−2π·fc/fs),  fc = 5 Hz
 // primed from the first sample so it does not emit a step while charging against 1 g.
 //
-// The output is checked against `yamete analyze` in verify() below — if the ports ever
-// diverge, this fails the build rather than shipping a chart that lies.
+// verify() keeps the port honest in two ways:
+//   1. Every peak must match a golden envelope maximum captured from `yamete analyze`.
+//   2. When the release binary is present, those goldens are re-checked live against
+//      analyze, so a stale golden cannot paper over a drifted filter.
+// Pages CI has no macOS binary (the workspace only builds on macOS), so step 1 is what
+// it runs; step 2 is what you get after `cargo build --release` on a Mac.
 //
 // Regenerate with:  bun run extract
 
+import { execFileSync } from "node:child_process";
 import { gunzipSync } from "node:zlib";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const FIXTURES = join(HERE, "../../fixtures");
+const ROOT = join(HERE, "../..");
+const FIXTURES = join(ROOT, "fixtures");
 const OUT = join(HERE, "../src/data/traces.json");
+const BIN = join(ROOT, "target/release/yamete");
 
 const HIGHPASS_HZ = 5.0;
 // Asymmetric on purpose. A short run-up establishes the noise floor, and the long tail is
@@ -150,15 +157,15 @@ function build(name, { id, title, at, verdict, note }) {
 }
 
 /**
- * The whole point of porting the filter is that it agrees with the Rust one.
+ * Envelope maxima from `yamete analyze` on the fixtures below (5 Hz high-pass, full
+ * recording). Not a live call — goldens so Pages CI can run without a binary.
  *
- * Every trace is centred on its recording's loudest moment, so the peak of the window we
- * emit must equal the envelope maximum `yamete analyze` reports for that fixture. If the
- * two ever disagree the port has drifted and the build stops.
- *
+ * Refresh after changing filters.rs or the fixtures:
+ *   cargo build --release
  *   for f in slap-hard desk-bump typing trackpad; do
  *     ./target/release/yamete analyze fixtures/$f.fixture.gz | grep envelope
  *   done
+ * then paste the `max` column here and re-run `bun run extract`.
  */
 const ENVELOPE_MAX_G = {
   "slap-hard": 0.52231,
@@ -167,21 +174,66 @@ const ENVELOPE_MAX_G = {
   trackpad: 0.09271,
 };
 
+const TOL = 0.002;
+
+/** Parse `envelope … max 0.52231 g` from `yamete analyze` stdout. */
+function analyzeEnvelopeMax(bin, fixture) {
+  const path = join(FIXTURES, `${fixture}.fixture.gz`);
+  const stdout = execFileSync(bin, ["analyze", path], { encoding: "utf8" });
+  const m = stdout.match(/envelope\s+.*?max\s+([\d.]+)\s*g/);
+  if (!m) {
+    throw new Error(`could not parse envelope max for ${fixture}:\n${stdout.slice(-400)}`);
+  }
+  return +m[1];
+}
+
 function verify(traces) {
   const errors = [];
+  const bin = existsSync(BIN) ? BIN : null;
+
   for (const t of traces) {
-    const want = ENVELOPE_MAX_G[t.fixture];
-    if (want == null) continue;
-    if (Math.abs(t.peak_g - want) > 0.002) {
+    const golden = ENVELOPE_MAX_G[t.fixture];
+    if (golden == null) continue;
+
+    if (Math.abs(t.peak_g - golden) > TOL) {
       errors.push(
-        `${t.fixture}: window peak is ${t.peak_g} g, but yamete analyze reports an envelope max of ${want} g`,
+        `${t.fixture}: JS window peak is ${t.peak_g} g, golden (from yamete analyze) is ${golden} g`,
       );
     }
+
+    if (bin) {
+      let rust;
+      try {
+        rust = analyzeEnvelopeMax(bin, t.fixture);
+      } catch (e) {
+        errors.push(`${t.fixture}: ${e.message}`);
+        continue;
+      }
+      if (Math.abs(t.peak_g - rust) > TOL) {
+        errors.push(
+          `${t.fixture}: JS window peak is ${t.peak_g} g, live yamete analyze reports ${rust} g`,
+        );
+      }
+      if (Math.abs(golden - rust) > TOL) {
+        errors.push(
+          `${t.fixture}: golden is ${golden} g but live yamete analyze reports ${rust} g — refresh ENVELOPE_MAX_G`,
+        );
+      }
+    }
   }
+
   if (errors.length) {
-    console.error("the JS high-pass has drifted from crates/yamete-dsp/src/filters.rs:");
+    console.error("the JS high-pass disagrees with the reference envelope maxima:");
     for (const e of errors) console.error("  " + e);
     process.exit(1);
+  }
+
+  if (bin) {
+    console.log(`verified against live ${bin}`);
+  } else {
+    console.log(
+      `verified against golden ENVELOPE_MAX_G (no ${BIN}; build it for a live check)`,
+    );
   }
 }
 

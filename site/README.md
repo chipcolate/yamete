@@ -37,9 +37,12 @@ into JavaScript, because plotting raw accelerometer magnitude would be misleadin
 dominated by the gravity vector swinging as the lid moves, and reads a slap at 0.52 g
 where the detector sees 0.08 g.
 
-A port that silently drifts from the original would be worse than no port at all, so the
-script checks its own output against `yamete analyze` and exits non-zero if the envelope
-maxima disagree. CI re-runs it and fails if the committed JSON is stale.
+A port that silently drifts from the original would be worse than no port at all. The
+script keeps two checks: JS peaks must match golden envelope maxima captured from
+`yamete analyze`, and when `target/release/yamete` is present those goldens are
+re-checked live against analyze (so a stale golden cannot hide a drifted filter). Pages
+CI only has the golden check — the workspace does not build off macOS. CI also fails if
+the committed `traces.json` is stale relative to the fixtures.
 
 ### The sensitivity table is replayed, not transcribed
 
@@ -78,5 +81,7 @@ The repository must be public for Pages to serve on a free plan.
 
 ## The download button 404s until there is a release
 
-Both CTAs point at `/releases/latest`, which resolves as soon as a `v*` tag is pushed and
-`release.yml` publishes the DMG. Nothing on the page needs editing at release time.
+The download CTAs point at `/releases/latest` (the release page). Checksums point at
+`/releases/latest/download/SHA256SUMS`, the fixed asset name `release.yml` publishes.
+Both resolve as soon as a `v*` tag is pushed. Nothing on the page needs editing at
+release time.

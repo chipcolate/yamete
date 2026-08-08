@@ -38,9 +38,11 @@ jobs:
         working-directory: site
         run: bun run check
 
-      # The charts are generated from fixtures/ and committed. Re-running the extractor
-      # here proves the committed JSON still matches the corpus and still agrees with the
-      # Rust detector — the script exits non-zero if the ported high-pass has drifted.
+      # Charts are generated from fixtures/ and committed. Re-running the extractor
+      # proves (1) the JSON still matches the corpus and (2) JS peaks still match the
+      # golden envelope maxima captured from `yamete analyze`. A live binary check is
+      # not available here — the workspace only builds on macOS; run `bun run extract`
+      # after `cargo build --release` locally to re-verify against analyze.
       - name: Trace data is current
         working-directory: site
         run: |

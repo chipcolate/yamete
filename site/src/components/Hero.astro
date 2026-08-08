@@ -1,0 +1,198 @@
+---
+import { Image } from "astro:assets";
+// The repository's own artwork, not a copy of it. Astro emits optimised webp variants at
+// build time, so nothing 860 KB reaches a browser.
+import icon from "../../../app-icon.png";
+import logotype from "../assets/yamete-logotype.svg?raw";
+import SlapTest from "./SlapTest.astro";
+import { DOWNLOAD, REPO } from "../lib/site";
+---
+
+<header class="hero">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <h1 class="lockup">
+        <span class="kana" set:html={logotype} />
+        <span class="gloss">stop it</span>
+      </h1>
+
+      <p class="pitch">Slap detection for Apple Silicon MacBooks.</p>
+      <p class="sub">
+        Hit the laptop, it makes a noise. The interesting part is that it works at all —
+        the sensor is undocumented, invisible to CoreMotion, and telling a slap from
+        someone thumping the desk needs the gyroscope.
+      </p>
+
+      <div class="cta">
+        <a class="btn" href={DOWNLOAD}>Download for Apple Silicon</a>
+        <a class="btn btn--ghost" href={REPO}>Source on GitHub</a>
+      </div>
+      <p class="mono requires">macOS 13+ · Apple Silicon laptops · M2 and later, or M1 Pro/Max</p>
+    </div>
+
+    <div class="hero__art">
+      <div class="laptop" data-laptop>
+        <Image
+          src={icon}
+          alt="The yamete app icon: a cartoon MacBook with a blushing face"
+          widths={[280, 420, 560]}
+          sizes="(max-width: 900px) 220px, 300px"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap"><SlapTest /></div>
+</header>
+
+<style>
+  .hero {
+    padding-block: clamp(2.5rem, 7vw, 4.5rem) var(--rhythm);
+  }
+
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .lockup {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  /* Outlines, not a webfont — the Japanese subset is 1.4 MB for these three characters.
+     See site/scripts/make-logotype.py. */
+  .kana :global(svg) {
+    display: block;
+    height: clamp(3.4rem, 10vw, 6rem);
+    width: auto;
+    color: var(--ink);
+  }
+
+  .gloss {
+    font-family: var(--body);
+    font-size: clamp(1rem, 2.4vw, 1.3rem);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .pitch {
+    font-family: var(--display);
+    font-size: clamp(1.35rem, 3.2vw, 1.9rem);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+
+  .sub {
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .requires {
+    margin: 0.9rem 0 0;
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .hero__art {
+    justify-self: end;
+  }
+
+  .laptop :global(img) {
+    display: block;
+    width: clamp(190px, 30vw, 360px);
+    height: auto;
+    filter: drop-shadow(8px 10px 0 rgb(56 24 37 / 0.1));
+  }
+
+  /* It settles in once on load, then only reacts to the slap test. */
+  .laptop {
+    animation: settle 700ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+    transform-origin: 50% 85%;
+  }
+
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Recoil for a slap; a small wobble for the bump it ignores. */
+  .laptop[data-hit] {
+    animation: recoil 480ms cubic-bezier(0.3, 1.4, 0.4, 1) both;
+  }
+  .laptop[data-nudge] {
+    animation: wobble 460ms ease-out both;
+  }
+
+  @keyframes recoil {
+    0% {
+      transform: none;
+    }
+    18% {
+      transform: translateX(16px) rotate(4.5deg) scale(0.95, 1.05);
+    }
+    45% {
+      transform: translateX(-7px) rotate(-2deg) scale(1.03, 0.97);
+    }
+    72% {
+      transform: translateX(3px) rotate(0.8deg);
+    }
+    100% {
+      transform: none;
+    }
+  }
+
+  @keyframes wobble {
+    0%,
+    100% {
+      transform: none;
+    }
+    30% {
+      transform: translateY(2px) scale(1.005);
+    }
+    60% {
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero__grid {
+      grid-template-columns: 1fr;
+    }
+    .hero__art {
+      justify-self: start;
+      order: -1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .laptop,
+    .laptop[data-hit],
+    .laptop[data-nudge] {
+      animation: none;
+    }
+  }
+</style>

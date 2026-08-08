@@ -1,0 +1,142 @@
+---
+// Three action kinds exist and no more: sound, webhook, run a command. There is no
+// notification action and no native Shortcuts action — Shortcuts are reached through the
+// webhook or the command. See crates/yamete-proto/src/config.rs.
+---
+
+<section id="actions">
+  <div class="wrap">
+    <p class="eyebrow">Actions</p>
+    <h2>Then something happens</h2>
+    <p class="lede">
+      Three kinds of response, each filtered by how hard the hit was. Every one of them can
+      read the slap it is responding to.
+    </p>
+
+    <div class="recipes">
+      <article class="recipe card">
+        <h3>Play a sound</h3>
+        <p>
+          Point it at files or a whole folder and it picks one each time, in order or at
+          random, never the same one twice running. Volume can follow how hard you hit it.
+        </p>
+        <pre><code><span class="c"># out of the box</span>
+/System/Library/
+  Sounds/<span class="v">Sosumi.aiff</span></code></pre>
+      </article>
+
+      <article class="recipe card">
+        <h3>Call a webhook</h3>
+        <p>
+          Any method, any headers, any body. The URL and the body are templated, so it can
+          talk to Home Assistant, a Shortcut or an IFTTT hook without special-casing.
+        </p>
+        <pre><code><span class="c"># POST body</span>
+&#123;
+  "tier": "<span class="v">&#123;&#123;tier&#125;&#125;</span>",
+  "g": <span class="v">&#123;&#123;peak_g&#125;&#125;</span>
+&#125;</code></pre>
+      </article>
+
+      <article class="recipe card">
+        <h3>Run a command</h3>
+        <p>
+          The slap arrives twice over: as environment variables for shell one-liners, and
+          as a JSON object on stdin for anything that would rather parse it.
+        </p>
+        <pre><code><span class="c">$</span> osascript -e "set volume 0"
+<span class="c">#</span> <span class="v">$YAMETE_TIER</span> → major
+<span class="c">#</span> <span class="v">$YAMETE_PEAK_G</span> → 0.52</code></pre>
+        <p class="mono meta">Behind an advanced switch</p>
+      </article>
+    </div>
+
+    <div class="pair">
+      <div class="detail card card--quiet">
+        <h3>It waits 200 ms first</h3>
+        <p>
+          Detection is fast enough that a sound starts while the physical slap is still
+          audible, and gets partly masked by it. The response wants to land after the
+          impact, not on top of it. 200 ms was chosen by ear, and it is adjustable per
+          action.
+        </p>
+      </div>
+      <div class="detail card card--quiet">
+        <h3>Severity and confidence are different questions</h3>
+        <p>
+          How many detectors agreed answers "was that an impact at all". How hard you hit
+          it is amplitude, and that alone decides whether an action tagged
+          <em>major</em> fires. Gating one on the other reported a real whack as a graze.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .recipes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
+
+  .recipe {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.6rem;
+  }
+
+  .recipe h3 {
+    margin-bottom: 0.6rem;
+  }
+
+  .recipe p {
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  /* Pushes each card's snippet to the bottom so all three align regardless of how much
+     prose sits above them. */
+  .recipe pre {
+    margin-top: auto;
+  }
+
+  .meta {
+    margin: 0.75rem 0 0 !important;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+  }
+
+  /* Quieter than the recipes — supporting detail, not a fourth option. */
+  .card--quiet {
+    background: rgb(255 255 255 / 0.4);
+    box-shadow: none;
+    border-style: dashed;
+    border-width: 1.5px;
+  }
+
+  .detail {
+    padding: 1.5rem 1.6rem;
+  }
+
+  .detail h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+  }
+
+  .detail p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+</style>

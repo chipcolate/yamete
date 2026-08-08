@@ -1,0 +1,23 @@
+---
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import Discriminator from "../components/Discriminator.astro";
+import Sensitivity from "../components/Sensitivity.astro";
+import Actions from "../components/Actions.astro";
+import AppPanel from "../components/AppPanel.astro";
+import Install from "../components/Install.astro";
+import Footer from "../components/Footer.astro";
+import { SITE } from "../lib/site";
+---
+
+<Base title={SITE.title} description={SITE.description}>
+  <Hero />
+  <main>
+    <Discriminator />
+    <Sensitivity />
+    <Actions />
+    <AppPanel />
+    <Install />
+  </main>
+  <Footer />
+</Base>

@@ -1,0 +1,49 @@
+/*
+ * Every colour here was sampled out of yamete.png rather than chosen, so the page and the
+ * app icon are demonstrably the same object. See site/README.md for the sampling command.
+ *
+ * The rule that keeps this coherent: --ink carries every piece of type and every outline,
+ * and --blush is graphic-only. Blush means exactly one thing on this page — "this is a
+ * slap". Anything the detector rejects is drawn in --shell.
+ */
+:root {
+  /* sampled from the artwork */
+  --ink: #381825;
+  --sky: #c6e9fc;
+  --cream: #f1e4dc;
+  --peach: #ffdac7;
+  --blush: #ff948a;
+  --shell: #d0d2de;
+
+  /* derived: the one darkened blush that is legible as text (5.4:1 on white) */
+  --blush-ink: #c0392b;
+  --muted: #5c4550; /* 8.7:1 on white */
+  --paper: #fffdfb;
+  --hairline: #e4d9d3;
+
+  /* the app's own tokens, so the recreated Monitor panel is not an approximation.
+     app/src/styles.css:1-33 and app/src/scope.ts:106-108 */
+  --scope-bg: #0d0f14;
+  --scope-grid: #1e2430;
+  --scope-accel: #4ade80;
+  --scope-gyro: #60a5fa;
+  --tier-micro: #94a3b8;
+  --tier-medium: #f59e0b;
+  --tier-major: #ef4444;
+
+  /* type */
+  --display: "Zen Maru Gothic", ui-rounded, system-ui, sans-serif;
+  --body: "Zen Kaku Gothic New", system-ui, -apple-system, sans-serif;
+  --mono: "Martian Mono", ui-monospace, "SF Mono", monospace;
+
+  /* the sticker construction: 2px ink outline, hard offset shadow, no blur */
+  --edge: 2px solid var(--ink);
+  --lift: 6px 6px 0 rgb(56 24 37 / 0.14);
+  --lift-sm: 3px 3px 0 rgb(56 24 37 / 0.14);
+  --radius: 28px;
+  --radius-sm: 14px;
+
+  --measure: 62ch;
+  --gutter: clamp(1.25rem, 5vw, 3rem);
+  --rhythm: clamp(4rem, 11vw, 8rem);
+}

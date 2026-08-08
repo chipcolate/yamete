@@ -1,0 +1,311 @@
+---
+// The app's Monitor view, rebuilt in SVG from its own tokens rather than screenshotted:
+// app/src/styles.css:1-33 for the scope colours, app/src/scope.ts:106-108 for the tier
+// strokes, and the tier bands from crates/yamete-dsp/src/config.rs. Drawn with the same
+// recorded slap the hero uses, so it is showing real data at real amplitudes.
+import data from "../data/traces.json";
+import { type Trace, line, area, CHART } from "../lib/chart";
+
+const slap = (data.traces as Trace[]).find((t) => t.id === "slap")!;
+
+const H = 128;
+const FULL_G = 0.8;
+const FULL_DPS = 80;
+const TIERS = [
+  { name: "major", g: 0.3, colour: "var(--tier-major)" },
+  { name: "medium", g: 0.12, colour: "var(--tier-medium)" },
+  { name: "micro", g: 0.04, colour: "var(--tier-micro)" },
+];
+const floor = H - CHART.pad;
+const yFor = (g: number) => floor - (g / FULL_G) * (floor - CHART.pad);
+
+// Where the impact lands in the window, as a fraction — the detection marker goes here.
+const hitAt = (slap.accel.indexOf(Math.max(...slap.accel)) / (slap.accel.length - 1)) * CHART.w;
+
+const NAV = [
+  { glyph: "◠", label: "Monitor" },
+  { glyph: "◎", label: "Detection" },
+  { glyph: "▶", label: "Actions" },
+  { glyph: "◆", label: "About" },
+];
+---
+
+<section id="app">
+  <div class="wrap">
+    <p class="eyebrow">The app</p>
+    <h2>It lives in the menu bar</h2>
+    <p class="lede">
+      Opening it starts detection, quitting it stops detection. The daemon does the real
+      work over a unix socket; the window is a controller that attaches to it.
+    </p>
+
+    <div class="split">
+      <div class="window card" role="img" aria-label="The Monitor view: a live oscilloscope showing acceleration and rotation, with severity bands and a detection marker">
+        <div class="chrome">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="mono title">Yamete</span>
+        </div>
+
+        <nav class="nav" aria-hidden="true">
+          {
+            NAV.map((n, i) => (
+              <span class:list={["navitem", i === 0 && "is-on"]}>
+                <span class="glyph">{n.glyph}</span>
+                {n.label}
+              </span>
+            ))
+          }
+        </nav>
+
+        <div class="scope">
+          <svg viewBox={`0 0 ${CHART.w} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+            <g class="grid">
+              {[0.25, 0.5, 0.75].map((f) => (
+                <line x1="0" y1={CHART.pad + f * (floor - CHART.pad)} x2={CHART.w} y2={CHART.pad + f * (floor - CHART.pad)} />
+              ))}
+            </g>
+            {
+              TIERS.map((t) => (
+                <line
+                  class="band"
+                  x1="0"
+                  y1={yFor(t.g)}
+                  x2={CHART.w}
+                  y2={yFor(t.g)}
+                  stroke={t.colour}
+                  stroke-dasharray="4 5"
+                  vector-effect="non-scaling-stroke"
+                />
+              ))
+            }
+            <line class="hit" x1={hitAt} y1="0" x2={hitAt} y2={floor} vector-effect="non-scaling-stroke" />
+            <path class="gyrofill" d={area(slap.gyro, FULL_DPS, H)} />
+            <path class="gyroline" d={line(slap.gyro, FULL_DPS, H)} fill="none" vector-effect="non-scaling-stroke" />
+            <path class="accelline" d={line(slap.accel, FULL_G, H)} fill="none" vector-effect="non-scaling-stroke" />
+          </svg>
+
+          <div class="legend mono">
+            <span class="lg lg--a">acceleration</span>
+            <span class="lg lg--g">rotation</span>
+            <span class="lg lg--t">severity bands</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="mono rk">Sensitivity</span>
+          <span class="track"><i style="left:50%"></i></span>
+          <span class="mono rv">0.50</span>
+        </div>
+        <div class="row">
+          <span class="mono rk">Cooldown</span>
+          <span class="track"><i style="left:23%"></i></span>
+          <span class="mono rv">0.75 s</span>
+        </div>
+      </div>
+
+      <div class="prose">
+        <p>
+          The window follows the system appearance rather than picking a look. A menu bar
+          utility that ignores light and dark reads as broken rather than styled.
+        </p>
+        <p>
+          It ships the daemon inside itself and owns its lifetime, so there is nothing to
+          install separately and nothing left running when you quit. If a daemon is already
+          running the app attaches to it and leaves it alone.
+        </p>
+        <p>
+          You can also skip the app. The daemon runs on its own as a user LaunchAgent, and
+          the protocol is newline-delimited JSON — you can drive it by hand with <code
+            >nc -U</code
+          >.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    margin-top: 2.5rem;
+  }
+
+  .window {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .dots {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .dots i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--hairline);
+  }
+
+  .title {
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .nav {
+    display: flex;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem 0;
+  }
+
+  .navitem {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border-radius: 6px;
+  }
+  .navitem.is-on {
+    color: var(--ink);
+    background: rgb(56 24 37 / 0.07);
+    font-weight: 500;
+  }
+  .glyph {
+    font-size: 0.75rem;
+  }
+
+  .scope {
+    margin: 0.7rem 0.85rem 0;
+    padding: 0.5rem 0.55rem 0.4rem;
+    background: var(--scope-bg);
+    border-radius: 8px;
+  }
+
+  .scope svg {
+    display: block;
+    width: 100%;
+    height: 128px;
+  }
+
+  .grid line {
+    stroke: var(--scope-grid);
+    stroke-width: 1;
+  }
+
+  .band {
+    opacity: 0.65;
+    stroke-width: 1;
+  }
+
+  .hit {
+    stroke: var(--tier-major);
+    stroke-width: 1.5;
+    opacity: 0.9;
+  }
+
+  .accelline {
+    stroke: var(--scope-accel);
+    stroke-width: 1.5;
+  }
+  .gyroline {
+    stroke: var(--scope-gyro);
+    stroke-width: 1.2;
+    opacity: 0.9;
+  }
+  .gyrofill {
+    fill: rgb(96 165 250 / 0.16);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    padding: 0.5rem 0.15rem 0.1rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .lg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .lg::before {
+    content: "";
+    width: 12px;
+    height: 2px;
+    background: currentColor;
+  }
+  .lg--a {
+    color: var(--scope-accel);
+  }
+  .lg--g {
+    color: var(--scope-gyro);
+  }
+  .lg--t {
+    color: var(--tier-medium);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) 3rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.95rem;
+  }
+  .row + .row {
+    padding-top: 0;
+    padding-bottom: 0.95rem;
+  }
+
+  .rk,
+  .rv {
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+  .rv {
+    text-align: right;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .track {
+    position: relative;
+    height: 3px;
+    background: var(--hairline);
+    border-radius: 999px;
+  }
+  .track i {
+    position: absolute;
+    top: 50%;
+    width: 13px;
+    height: 13px;
+    translate: -50% -50%;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+  }
+
+  .prose p {
+    max-width: 44ch;
+  }
+
+  @media (max-width: 860px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

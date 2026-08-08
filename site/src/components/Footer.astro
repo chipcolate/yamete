@@ -1,0 +1,67 @@
+---
+import { REPO } from "../lib/site";
+---
+
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <p class="claim">
+      Nothing here derives from other projects in this space. Their published thresholds
+      were measured against this machine, found to sit below its noise floor, and none were
+      adopted.
+    </p>
+    <nav class="links mono" aria-label="Elsewhere">
+      <a href={REPO}>GitHub</a>
+      <a href={`${REPO}/releases`}>Releases</a>
+      <a href={`${REPO}/blob/main/README.md`}>README</a>
+    </nav>
+    <p class="mono legal">MIT · やめて — stop it</p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    padding-block: var(--rhythm) 3rem;
+    border-top: 1.5px solid var(--ink);
+  }
+
+  .foot__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5rem 2rem;
+    align-items: start;
+  }
+
+  .claim {
+    grid-row: 1;
+    margin: 0;
+    max-width: 52ch;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  .links {
+    grid-row: 1;
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .legal {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.62rem;
+    color: var(--muted);
+    opacity: 0.8;
+  }
+
+  @media (max-width: 640px) {
+    .foot__grid {
+      grid-template-columns: 1fr;
+    }
+    .links {
+      grid-row: auto;
+    }
+  }
+</style>

@@ -1,0 +1,26 @@
+{
+  "name": "yamete-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract-traces.mjs",
+    "sensitivity": "node scripts/extract-sensitivity.mjs",
+    "logotype": "python3 scripts/make-logotype.py",
+    "og": "python3 scripts/make-og.py",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "astro": "^5.14.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@fontsource/martian-mono": "^5.2.6",
+    "@fontsource/zen-kaku-gothic-new": "^5.2.6",
+    "@fontsource/zen-maru-gothic": "^5.2.6",
+    "typescript": "^6"
+  }
+}

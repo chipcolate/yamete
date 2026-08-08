@@ -1,0 +1,125 @@
+---
+import { DOWNLOAD, REPO } from "../lib/site";
+---
+
+<section id="install">
+  <div class="wrap">
+    <p class="eyebrow">Install</p>
+    <h2>Whether your Mac can run it</h2>
+
+    <div class="split">
+      <div class="reqs">
+        <dl class="req">
+          <dt>Works on</dt>
+          <dd>
+            Apple Silicon <strong>laptops</strong> running macOS 13 or later — M2 and
+            later, plus M1 Pro and M1 Max.
+          </dd>
+
+          <dt>Has no sensor</dt>
+          <dd>
+            The M1 MacBook Pro (2020), the M1 Air, every desktop Mac and every Intel Mac.
+            <code>yamete probe</code> says so plainly rather than hanging.
+          </dd>
+
+          <dt>Asks for</dt>
+          <dd>
+            Input Monitoring, on first launch. macOS gates all HID access behind it,
+            including a motion sensor that is not an input device in any useful sense.
+          </dd>
+        </dl>
+
+        <div class="cta">
+          <a class="btn" href={DOWNLOAD}>Download the DMG</a>
+          <a class="btn btn--ghost" href={DOWNLOAD}>Checksums</a>
+        </div>
+        <p class="mono fine">
+          Signed and notarised · Apple Silicon · open the DMG and drag it across
+        </p>
+      </div>
+
+      <div class="cli">
+        <h3>Or just the daemon</h3>
+        <p>
+          It runs happily without the app, which is how the detector was developed. A user
+          LaunchAgent keeps detection running with nothing on screen.
+        </p>
+        <pre><code><span class="c"># is the sensor there, at what rate, decoding correctly</span>
+yamete probe
+
+<span class="c"># live detections, with the five detector scores</span>
+yamete watch --scores
+
+<span class="c"># run it permanently, independent of the app</span>
+yamete install --copy</code></pre>
+        <p class="src">
+          Everything — the detector, the corpus and the tuning tools — is at
+          <a href={REPO}>github.com/chipcolate/yamete</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: clamp(1.75rem, 4vw, 3.5rem);
+    margin-top: 2.5rem;
+    align-items: start;
+  }
+
+  .req {
+    margin: 0 0 2rem;
+  }
+
+  .req dt {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 0.9rem;
+    border-top: 1.5px solid var(--ink);
+  }
+
+  .req dt:not(:first-child) {
+    margin-top: 1.25rem;
+  }
+
+  .req dd {
+    margin: 0.4rem 0 0;
+    max-width: 46ch;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .fine {
+    margin-top: 0.9rem;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  .cli h3 {
+    margin-bottom: 0.6rem;
+  }
+
+  .cli p {
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  .cli pre {
+    margin: 1.25rem 0;
+  }
+
+  .src {
+    font-size: 0.9rem;
+  }
+</style>

@@ -1,6 +1,10 @@
 /target
 /app/dist
 /app/node_modules
+/site/dist
+/site/node_modules
+# Astro's generated type shims, regenerated on every build.
+/site/.astro
 /app/src-tauri/target
 /app/src-tauri/gen
 # Staged at build time from target/release by build-app.sh; never a source of truth.

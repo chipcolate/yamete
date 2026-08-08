@@ -1,0 +1,348 @@
+---
+// The signature element. Two buttons replay two real recordings through the same pair of
+// panels on the same axes, and the one the detector throws away is visibly the bigger
+// impact. Every number shown is measured — see site/scripts/extract-traces.mjs.
+import data from "../data/traces.json";
+import {
+  type Trace,
+  area,
+  line,
+  ACCEL_FULL_SCALE_G,
+  GYRO_FULL_SCALE_DPS,
+  CHART,
+} from "../lib/chart";
+
+const traces = data.traces as Trace[];
+const shown = ["slap", "desk-bump"].map((id) => traces.find((t) => t.id === id)!);
+---
+
+<div class="slaptest">
+  <div class="controls" role="group" aria-label="Replay a recording">
+    <button type="button" class="tap" data-play="slap" aria-pressed="true">Slap the lid</button>
+    <button type="button" class="tap" data-play="desk-bump" aria-pressed="false">
+      Bump the desk
+    </button>
+  </div>
+
+  <figure class="scope card">
+    {
+      shown.map((t) => (
+        <div class="trace" data-trace={t.id} hidden={t.id !== "slap"}>
+          <div class="panel">
+            <div class="panel__head">
+              <span class="mono key">acceleration</span>
+              <span class="mono tick">{ACCEL_FULL_SCALE_G} g</span>
+            </div>
+            <svg
+              viewBox={`0 0 ${CHART.w} ${CHART.accelH}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                class="base"
+                x1="0"
+                y1={CHART.accelH - CHART.pad}
+                x2={CHART.w}
+                y2={CHART.accelH - CHART.pad}
+                vector-effect="non-scaling-stroke"
+              />
+              <path class="fill" d={area(t.accel, ACCEL_FULL_SCALE_G, CHART.accelH)} />
+              <path
+                class="stroke"
+                d={line(t.accel, ACCEL_FULL_SCALE_G, CHART.accelH)}
+                fill="none"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+
+          <div class="panel panel--gyro">
+            <div class="panel__head">
+              <span class="mono key">rotation</span>
+              <span class="mono tick">{GYRO_FULL_SCALE_DPS} °/s</span>
+            </div>
+            <svg
+              viewBox={`0 0 ${CHART.w} ${CHART.gyroH}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                class="base"
+                x1="0"
+                y1={CHART.gyroH - CHART.pad}
+                x2={CHART.w}
+                y2={CHART.gyroH - CHART.pad}
+                vector-effect="non-scaling-stroke"
+              />
+              <path class="fill fill--gyro" d={area(t.gyro, GYRO_FULL_SCALE_DPS, CHART.gyroH)} />
+              <path
+                class="stroke stroke--gyro"
+                d={line(t.gyro, GYRO_FULL_SCALE_DPS, CHART.gyroH)}
+                fill="none"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+        </div>
+      ))
+    }
+
+    <figcaption class="readout" aria-live="polite">
+      {
+        shown.map((t) => (
+          <p class="verdict" data-verdict={t.id} hidden={t.id !== "slap"}>
+            <span class="mono num">{t.peak_g.toFixed(2)} g</span>
+            <span class="mono num num--gyro">{t.gyro_peak.toFixed(1)} °/s</span>
+            <span class={`chip chip--${t.verdict}`}>{t.verdict}</span>
+          </p>
+        ))
+      }
+    </figcaption>
+  </figure>
+
+  <p class="footnote">
+    Two real recordings, drawn on the same axes. The desk bump is the larger impact by
+    40 % and the detector throws it away — it barely rotates the machine.
+  </p>
+</div>
+
+<style>
+  .slaptest {
+    margin-top: 2.5rem;
+  }
+
+  .controls {
+    display: inline-flex;
+    gap: 0.3rem;
+    padding: 0.3rem;
+    margin-bottom: 1.1rem;
+    background: rgb(255 255 255 / 0.5);
+    border: var(--edge);
+    border-radius: 999px;
+    box-shadow: var(--lift-sm);
+  }
+
+  /* A two-state selector, not two independent actions: the pressed one is what you see. */
+  .tap {
+    padding: 0.6rem 1.25rem;
+    font-family: var(--body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background 140ms ease,
+      color 140ms ease;
+  }
+  .tap[aria-pressed="true"] {
+    color: var(--paper);
+    background: var(--ink);
+  }
+  .tap[aria-pressed="false"]:hover {
+    background: rgb(56 24 37 / 0.08);
+  }
+
+  .scope {
+    margin: 0;
+    padding: 1.15rem 1.25rem 0.9rem;
+  }
+
+  .panel + .panel {
+    margin-top: 0.9rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .panel__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .key,
+  .tick {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tick {
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    opacity: 0.65;
+  }
+  .panel--gyro .key {
+    color: var(--blush-ink);
+  }
+
+  .panel svg {
+    display: block;
+    width: 100%;
+    height: 104px;
+  }
+  .panel--gyro svg {
+    height: 62px;
+  }
+
+  .base {
+    stroke: var(--hairline);
+    stroke-width: 1;
+  }
+
+  .fill {
+    fill: rgb(56 24 37 / 0.1);
+  }
+  .stroke {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+
+  /* Blush means rotation everywhere on this page — the quantity that decides the verdict. */
+  .fill--gyro {
+    fill: rgb(255 148 138 / 0.22);
+  }
+  .stroke--gyro {
+    stroke: var(--blush);
+  }
+
+  /* Drawn on when a trace is swapped in. The dash length only has to exceed the path;
+     overshoot is invisible, so it is not worth measuring each one. */
+  .trace[data-drawing] .stroke {
+    stroke-dasharray: 4000;
+    animation: draw 640ms ease-out both;
+  }
+  .trace[data-drawing] .fill {
+    animation: fade 640ms ease-out both;
+  }
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 4000;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .readout {
+    margin: 0.9rem 0 0;
+    padding-top: 0.75rem;
+    border-top: var(--edge);
+    border-width: 1.5px;
+  }
+
+  .verdict {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin: 0;
+    max-width: none;
+  }
+
+  .num {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .num--gyro {
+    color: var(--blush-ink);
+  }
+
+  .chip {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+  }
+  .chip--fires {
+    color: var(--paper);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .chip--ignored {
+    color: var(--muted);
+  }
+
+  .footnote {
+    margin: 1rem 0 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  @media (max-width: 520px) {
+    .controls {
+      display: flex;
+    }
+    .tap {
+      flex: 1;
+      padding-inline: 0.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trace[data-drawing] .stroke {
+      stroke-dasharray: none;
+      animation: none;
+    }
+    .trace[data-drawing] .fill {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>(".slaptest");
+  if (root) {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-play]")];
+    const laptop = document.querySelector<HTMLElement>("[data-laptop]");
+
+    const show = (id: string) => {
+      for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.play === id));
+
+      for (const el of root.querySelectorAll<HTMLElement>("[data-trace]")) {
+        const on = el.dataset.trace === id;
+        el.hidden = !on;
+        // Re-adding the attribute after a forced reflow restarts the draw; without it the
+        // browser coalesces both mutations and the animation never replays.
+        el.removeAttribute("data-drawing");
+        if (on) {
+          void el.getBoundingClientRect();
+          el.setAttribute("data-drawing", "");
+        }
+      }
+
+      for (const p of root.querySelectorAll<HTMLElement>("[data-verdict]")) {
+        p.hidden = p.dataset.verdict !== id;
+      }
+
+      // The laptop only flinches at the thing that actually gets through to it.
+      if (laptop) {
+        laptop.removeAttribute("data-hit");
+        laptop.removeAttribute("data-nudge");
+        void laptop.getBoundingClientRect();
+        laptop.setAttribute(id === "slap" ? "data-hit" : "data-nudge", "");
+      }
+    };
+
+    for (const b of buttons) b.addEventListener("click", () => show(b.dataset.play!));
+  }
+</script>

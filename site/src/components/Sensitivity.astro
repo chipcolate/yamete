@@ -1,0 +1,260 @@
+---
+// The false-positive column is the point of this section. Every detector has one; most
+// products decline to print it. These numbers come from replaying the corpus at each
+// slider position — see site/scripts/extract-sensitivity.mjs.
+import data from "../data/sensitivity.json";
+
+const { corpus, rows } = data;
+const defaultIndex = rows.findIndex((r) => r.at === 0.5);
+---
+
+<section id="tuning">
+  <div class="wrap">
+    <p class="eyebrow">Sensitivity</p>
+    <h2>What it catches, and what it gets wrong</h2>
+    <p class="lede">
+      {corpus.slaps} recorded slaps, and {corpus.quiet_seconds} seconds of typing, trackpad
+      clicks, desk bumps, lid movement and an untouched laptop that all have to stay silent.
+      One slider moves between these.
+    </p>
+
+    <div class="tuner card">
+      <div class="control">
+        <label class="mono lbl" for="sens">Sensitivity</label>
+        <input
+          id="sens"
+          type="range"
+          min="0"
+          max={rows.length - 1}
+          step="1"
+          value={defaultIndex}
+          list="sens-steps"
+          aria-describedby="sens-out"
+        />
+        <datalist id="sens-steps">
+          {rows.map((r, i) => <option value={i} label={r.at.toFixed(2)} />)}
+        </datalist>
+        <output class="mono val" id="sens-out" for="sens">{rows[defaultIndex].at.toFixed(2)}</output>
+      </div>
+
+      <div class="stats" aria-live="polite">
+        <div class="stat">
+          <span class="mono stat__k">Slaps caught</span>
+          <span class="stat__v" data-caught>{rows[defaultIndex].caught} / {corpus.slaps}</span>
+        </div>
+        <div class="stat stat--fp">
+          <span class="mono stat__k">False positives</span>
+          <span class="stat__v" data-fp>{rows[defaultIndex].false_positives}</span>
+        </div>
+        <p class="character" data-character>{rows[defaultIndex].character}</p>
+      </div>
+
+      <table class="grid">
+        <caption class="mono">Measured by replaying the corpus at each position</caption>
+        <thead>
+          <tr>
+            <th scope="col">Slider</th>
+            <th scope="col">Caught</th>
+            <th scope="col">False positives</th>
+            <th scope="col">Character</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((r, i) => (
+              <tr data-row={i} class:list={[i === defaultIndex && "is-on"]}>
+                <td class="mono">{r.at.toFixed(2)}</td>
+                <td class="mono">
+                  {r.caught}/{r.total}
+                </td>
+                <td class="mono num-fp">{r.false_positives}</td>
+                <td>{r.character}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      The default sits where the corpus is still clean. Push it up and you buy the last few
+      slaps with desk bumps. Typing never triggers a detection at any position.
+    </p>
+  </div>
+
+  <script>
+    import rowData from "../data/sensitivity.json";
+
+    const slider = document.querySelector<HTMLInputElement>("#sens");
+    const out = document.querySelector<HTMLOutputElement>("#sens-out");
+    const caught = document.querySelector<HTMLElement>("[data-caught]");
+    const fp = document.querySelector<HTMLElement>("[data-fp]");
+    const character = document.querySelector<HTMLElement>("[data-character]");
+
+    if (slider && out && caught && fp && character) {
+      const { corpus, rows } = rowData;
+      const apply = () => {
+        const i = Number(slider.value);
+        const r = rows[i]!;
+        out.textContent = r.at.toFixed(2);
+        caught.textContent = `${r.caught} / ${corpus.slaps}`;
+        fp.textContent = String(r.false_positives);
+        fp.classList.toggle("is-bad", r.false_positives > 0);
+        character.textContent = r.character;
+        for (const tr of document.querySelectorAll<HTMLElement>("[data-row]")) {
+          tr.classList.toggle("is-on", Number(tr.dataset.row) === i);
+        }
+      };
+      slider.addEventListener("input", apply);
+      apply();
+    }
+  </script>
+</section>
+
+<style>
+  .tuner {
+    margin-top: 2.5rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .control {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .lbl {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 1.5rem;
+    accent-color: var(--ink);
+    cursor: pointer;
+  }
+
+  .val {
+    font-size: 1rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: end;
+    gap: clamp(1.25rem, 4vw, 2.5rem);
+    margin: 1.75rem 0 0;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stat__k {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .stat__v {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A false positive is not an error state at 0, so it only colours once there is one. */
+  .stat--fp .stat__v.is-bad {
+    color: var(--blush-ink);
+  }
+
+  .character {
+    margin: 0;
+    padding-bottom: 0.35rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    max-width: none;
+  }
+
+  .grid {
+    width: 100%;
+    margin-top: 1.5rem;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .grid caption {
+    margin-bottom: 0.75rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+  }
+
+  .grid th {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 0.75rem 0.5rem 0;
+    border-bottom: 1.5px solid var(--ink);
+  }
+
+  .grid td {
+    padding: 0.55rem 0.75rem 0.55rem 0;
+    border-bottom: 1px solid var(--hairline);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grid tbody tr {
+    transition: background 140ms ease;
+  }
+
+  .grid tr.is-on td {
+    background: rgb(255 148 138 / 0.14);
+    font-weight: 500;
+  }
+
+  .grid tr.is-on td:first-child {
+    box-shadow: inset 3px 0 0 var(--blush);
+  }
+
+  .num-fp {
+    color: var(--blush-ink);
+  }
+
+  .note {
+    margin-top: 1.5rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 700px) {
+    .stats {
+      grid-template-columns: auto auto;
+    }
+    .character {
+      grid-column: 1 / -1;
+      padding-bottom: 0;
+    }
+    .grid th:last-child,
+    .grid td:last-child {
+      display: none;
+    }
+  }
+</style>

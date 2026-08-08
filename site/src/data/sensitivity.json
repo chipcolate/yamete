@@ -1,0 +1,57 @@
+{
+  "corpus": {
+    "slaps": 40,
+    "quiet_seconds": 150,
+    "quiet_files": 5
+  },
+  "rows": [
+    {
+      "at": 0.2,
+      "caught": 13,
+      "total": 40,
+      "recall": 32,
+      "false_positives": 0,
+      "character": "Only a deliberate whack."
+    },
+    {
+      "at": 0.35,
+      "caught": 19,
+      "total": 40,
+      "recall": 48,
+      "false_positives": 0,
+      "character": "Never fires by accident."
+    },
+    {
+      "at": 0.5,
+      "caught": 35,
+      "total": 40,
+      "recall": 88,
+      "false_positives": 0,
+      "character": "The default."
+    },
+    {
+      "at": 0.65,
+      "caught": 39,
+      "total": 40,
+      "recall": 98,
+      "false_positives": 7,
+      "character": "Catches almost everything, desk bumps too."
+    },
+    {
+      "at": 0.8,
+      "caught": 39,
+      "total": 40,
+      "recall": 98,
+      "false_positives": 11,
+      "character": "Twitchy."
+    },
+    {
+      "at": 1,
+      "caught": 40,
+      "total": 40,
+      "recall": 100,
+      "false_positives": 18,
+      "character": "Anything that shakes the desk."
+    }
+  ]
+}

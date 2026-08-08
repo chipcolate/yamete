@@ -11,6 +11,3 @@ export const SITE = {
   description:
     "Hit the laptop, it makes a noise. A menu bar app that reads the undocumented motion sensor in Apple Silicon MacBooks at 805 Hz and tells a slap from a desk bump.",
 };
-
-/** Public contact for privacy / product questions (mirrors tesserone@chipcolate.com). */
-export const CONTACT_EMAIL = "yamete@chipcolate.com";

@@ -1,0 +1,95 @@
+---
+// Short landing beat for the local/private story. Full text lives at /privacy.
+---
+
+<section id="privacy" aria-labelledby="privacy-heading">
+  <div class="wrap">
+    <p class="eyebrow">On your Mac</p>
+    <h2 id="privacy-heading">Nothing leaves unless you send it</h2>
+    <p class="lede">
+      Detection, config and logs stay in your home directory. There is no account, no
+      Chipcolate cloud, and no analytics SDK. The only network paths are ones you configure.
+    </p>
+
+    <ul class="points">
+      <li class="point card">
+        <p class="mono label">Local only</p>
+        <p>
+          Sensor samples are processed on-device. Optional scope telemetry is a local socket
+          stream to the menu bar app, off when nobody is watching.
+        </p>
+      </li>
+      <li class="point card">
+        <p class="mono label">No account</p>
+        <p>
+          No sign-up, no profile, no server we operate. Uninstall and delete a few paths
+          under <code>~/Library</code> and it is gone.
+        </p>
+      </li>
+      <li class="point card">
+        <p class="mono label">Your actions</p>
+        <p>
+          Sounds stay local. Webhooks and commands only talk to endpoints or programs
+          <em>you</em> set — never to us by default.
+        </p>
+      </li>
+    </ul>
+
+    <p class="more">
+      <a href="/privacy">Full privacy policy</a>
+      <span class="sep mono" aria-hidden="true">·</span>
+      <a href="/privacy#questions">Questions via GitHub Issues</a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .points {
+    list-style: none;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 1.1rem;
+  }
+
+  .point {
+    margin: 0;
+    padding: 1.35rem 1.4rem 1.45rem;
+  }
+
+  .point p {
+    margin: 0;
+    max-width: none;
+    font-size: 0.98rem;
+    color: var(--muted);
+  }
+
+  .label {
+    margin: 0 0 0.55rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .point code {
+    font-size: 0.85em;
+  }
+
+  .more {
+    margin: 1.75rem 0 0;
+    font-size: 0.95rem;
+  }
+
+  .more a {
+    font-weight: 500;
+  }
+
+  .sep {
+    margin-inline: 0.65rem;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+</style>

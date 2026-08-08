@@ -1,12 +1,11 @@
 ---
 import Base from "../layouts/Base.astro";
-import { CONTACT_EMAIL, REPO } from "../lib/site";
+import { REPO } from "../lib/site";
 
 const title = "Privacy Policy — yamete";
 const description =
   "yamete does not collect or transmit your data. Detection and configuration stay on your Mac.";
 const issues = `${REPO}/issues`;
-const contact = CONTACT_EMAIL;
 ---
 
 <Base title={title} description={description}>
@@ -139,9 +138,11 @@ const contact = CONTACT_EMAIL;
           to user-configured webhooks and to whatever you run via exec.
         </p>
         <p>
-          Distribution may involve Apple (notarisation / Gatekeeper) and GitHub (source and
-          releases). Those platforms process data under their own terms when you download
-          or build software from them.
+          yamete is not distributed through the Mac App Store. Builds are signed and
+          notarised for Gatekeeper, then published as GitHub Releases. Apple’s notarisation
+          service sees the binary at submit time under Apple’s terms; Chipcolate does not
+          receive usage data from that process. Source and downloads live on GitHub under
+          GitHub’s terms.
         </p>
       </section>
 
@@ -174,16 +175,14 @@ const contact = CONTACT_EMAIL;
         </p>
       </section>
 
-      <section>
-        <h2>Contact</h2>
+      <section id="questions">
+        <h2>Questions</h2>
         <p>
-          Questions about this policy? Open an issue at
-          <a href={issues}>github.com/chipcolate/yamete/issues</a>
-          or email
-          <a href={`mailto:${contact}`}>{contact}</a>.
+          Questions about this policy go to the project’s issue tracker:
+          <a href={issues}>github.com/chipcolate/yamete/issues</a>.
         </p>
         <p class="controller mono">
-          Controller: CHIPCOLATE SRL · Product: yamete
+          CHIPCOLATE SRL · Product: yamete · Apache-2.0
         </p>
       </section>
     </article>

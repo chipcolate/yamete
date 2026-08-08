@@ -43,9 +43,7 @@ struct Scheduled {
 enum Job {
     /// Boxed because the decoded audio makes this variant far larger than the others, and
     /// every queued job — including webhooks and commands — would otherwise be sized for it.
-    Sound {
-        data: Box<StaticSoundData>,
-    },
+    Sound { data: Box<StaticSoundData> },
     Exec {
         program: String,
         args: Vec<String>,

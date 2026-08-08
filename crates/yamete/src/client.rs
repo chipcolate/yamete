@@ -8,8 +8,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
-use yamete_proto::{Event, Request};
 use crate::error::Error;
+use yamete_proto::{Event, Request};
 
 fn connect() -> Result<UnixStream, Error> {
     let path = yamete_proto::socket_path();

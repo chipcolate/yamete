@@ -255,7 +255,10 @@ impl Action {
                     ));
                 }
                 let method = method.trim();
-                if !method.is_empty() && !ALLOWED_WEBHOOK_METHODS.iter().any(|m| method.eq_ignore_ascii_case(m))
+                if !method.is_empty()
+                    && !ALLOWED_WEBHOOK_METHODS
+                        .iter()
+                        .any(|m| method.eq_ignore_ascii_case(m))
                 {
                     return Err(format!(
                         "action `{}`: webhook method must be one of {}",

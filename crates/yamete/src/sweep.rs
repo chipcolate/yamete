@@ -7,8 +7,8 @@
 
 use std::path::PathBuf;
 
-use yamete_dsp::{Config, GyroMode};
 use crate::error::Error;
+use yamete_dsp::{Config, GyroMode};
 
 use crate::replay;
 
@@ -112,9 +112,7 @@ pub fn run(files: &[PathBuf], knob: Knob) -> Result<(), Error> {
     }
 
     if corpus.is_empty() {
-        return Err(Error::other(
-            "no annotated fixtures to sweep against",
-        ));
+        return Err(Error::other("no annotated fixtures to sweep against"));
     }
 
     let total_slaps: usize = corpus

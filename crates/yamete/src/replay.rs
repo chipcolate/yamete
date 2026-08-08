@@ -5,8 +5,8 @@
 
 use std::path::Path;
 
-use yamete_dsp::{Config, Detector, Fixture, Frame};
 use crate::error::Error;
+use yamete_dsp::{Config, Detector, Fixture, Frame};
 
 /// Result of replaying one fixture.
 pub struct Outcome {

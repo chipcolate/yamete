@@ -7,8 +7,8 @@
 
 use std::path::PathBuf;
 
-use yamete_dsp::{Config, Detector, Frame};
 use crate::error::Error;
+use yamete_dsp::{Config, Detector, Frame};
 
 use crate::replay;
 

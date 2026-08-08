@@ -34,7 +34,6 @@ pub enum GyroMode {
     Require,
 }
 
-
 /// Thresholds for the five accelerometer detectors.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(default)]

@@ -71,6 +71,26 @@ jobs:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
         run: |
           set -euo pipefail
+
+          # Runner has no login keychain identities. Import the Developer ID .p12 so
+          # codesign / Tauri can find APPLE_SIGNING_IDENTITY.
+          if [ -n "${APPLE_CERTIFICATE:-}" ]; then
+            CERT_PATH="$RUNNER_TEMP/certificate.p12"
+            KEYCHAIN_PATH="$RUNNER_TEMP/yamete-signing.keychain-db"
+            KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+            echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 \
+              -k "$KEYCHAIN_PATH"
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" \
+              "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+            rm -f "$CERT_PATH"
+          fi
+
           # notarytool wants a file, and a secret is a string. Written outside the working
           # tree so it cannot be picked up by anything that globs the repo.
           if [ -n "${APPLE_API_KEY_CONTENT:-}" ]; then

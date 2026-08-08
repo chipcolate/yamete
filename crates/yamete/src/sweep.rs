@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 
 use yamete_dsp::{Config, GyroMode};
-use yamete_sensor::Error;
+use crate::error::Error;
 
 use crate::replay;
 
@@ -112,8 +112,8 @@ pub fn run(files: &[PathBuf], knob: Knob) -> Result<(), Error> {
     }
 
     if corpus.is_empty() {
-        return Err(Error::Iokit(
-            "no annotated fixtures to sweep against".into(),
+        return Err(Error::other(
+            "no annotated fixtures to sweep against",
         ));
     }
 

@@ -7,7 +7,9 @@
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use yamete_sensor::{Access, Error, Imu, Sample, SensorKind, Stats};
+use yamete_sensor::{Access, Imu, Sample, SensorKind, Stats};
+
+use crate::error::Error;
 
 /// Running min/max/mean over one stream, so we can sanity-check the decode.
 #[derive(Default)]
@@ -121,11 +123,10 @@ pub fn run(secs: f64) -> Result<(), Error> {
     let elapsed = start.elapsed();
 
     if accel.count == 0 {
-        return Err(Error::Iokit(
+        return Err(Error::other(
             "the device opened but delivered no reports. This is the signature of the \
              SPU not being woken — check that the AppleSPUHIDDriver properties were set \
-             before open, not on the IOHIDDevice"
-                .into(),
+             before open, not on the IOHIDDevice",
         ));
     }
 
@@ -142,7 +143,7 @@ pub fn run(secs: f64) -> Result<(), Error> {
         println!("Decode check: PASS — mean magnitude {mean:.4} g ≈ 1 g at rest.");
         Ok(())
     } else {
-        Err(Error::Iokit(format!(
+        Err(Error::other(format!(
             "decode check FAILED — mean magnitude {mean:.4} g, expected ~1.0 g at rest. \
              Either the machine was moving, or the report layout differs on this model"
         )))

@@ -1,8 +1,18 @@
 //! The app's connection to `yamete`.
 //!
-//! The app is a *controller*, not the detector — everything real happens in the daemon,
-//! which runs under launchd whether or not this window is open. So this is a client that
-//! attaches when it can, reconnects when it can't, and never assumes the daemon is there.
+//! The app is a *controller*, not the detector — everything real happens in the daemon.
+//! There are two supported lifetime models:
+//!
+//! * **App-owned (default for the menu bar app).** The supervisor spawns the bundled
+//!   binary with `--exit-with-parent` and kills only what it started. Quitting the app
+//!   stops detection.
+//! * **LaunchAgent (CLI / always-on).** `yamete install` registers a user agent that
+//!   outlives the app. The app then *attaches* to the existing socket and does not kill
+//!   that process on exit.
+//!
+//! This module is only the client: it attaches when it can, reconnects when it can't, and
+//! never assumes the daemon is there. See `supervisor.rs` and `yamete`'s `launchd` module
+//! for the two ownership paths.
 //!
 //! Two channels run over the one socket: request/reply for config and status, and a
 //! subscription stream for slaps and telemetry. Telemetry is only requested while a window
@@ -276,11 +286,13 @@ pub fn test_action(
     id: String,
     intensity: f32,
 ) -> Result<(), String> {
-    // A successful test produces no reply, so a timeout here means success. Anything that
-    // does come back is a complaint worth surfacing.
+    // The daemon replies with Pong once the job is queued. Connect/write failures and
+    // unknown action ids must surface — treating every Err as success hid a dead daemon.
     match daemon.request(&Request::TestAction { id, intensity }) {
+        Ok(Event::Pong) => Ok(()),
         Ok(Event::Error { message }) => Err(message),
-        Ok(_) | Err(_) => Ok(()),
+        Ok(other) => Err(format!("unexpected reply: {other:?}")),
+        Err(e) => Err(e),
     }
 }
 

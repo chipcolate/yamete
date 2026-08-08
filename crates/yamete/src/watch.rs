@@ -7,8 +7,9 @@ use std::io::Write;
 use std::time::Duration;
 
 use yamete_dsp::{Config, Detector};
-use yamete_sensor::{Error, Imu};
+use yamete_sensor::Imu;
 
+use crate::error::Error;
 use crate::pump::{Pump, Source};
 
 pub fn run(sensitivity: f32, show_scores: bool) -> Result<(), Error> {

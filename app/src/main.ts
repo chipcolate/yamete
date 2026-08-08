@@ -75,12 +75,14 @@ function render() {
 }
 
 /** Plain-language summary, from the measured sweep over the recorded corpus. */
+/** Character strings aligned with `site/src/data/sensitivity.json` (replayed corpus). */
 function describeSensitivity(value: number): string {
   if (value <= 0.25) return "Only a deliberate whack registers.";
   if (value <= 0.4) return "Firm slaps only — never fires by accident.";
   if (value <= 0.55) return "Balanced. Catches most slaps, ignores typing and the desk.";
-  if (value <= 0.7) return "Catches everything, including knocks on the desk.";
-  return "Twitchy — anything that shakes the desk counts.";
+  if (value <= 0.7) return "Catches almost everything — desk bumps start to get through.";
+  if (value <= 0.85) return "Twitchy — desk knocks fire often.";
+  return "Anything that shakes the desk counts.";
 }
 
 /** Formats the decoder understands; anything else would fail to load. */

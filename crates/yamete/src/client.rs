@@ -9,12 +9,12 @@ use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
 use yamete_proto::{Event, Request};
-use yamete_sensor::Error;
+use crate::error::Error;
 
 fn connect() -> Result<UnixStream, Error> {
     let path = yamete_proto::socket_path();
     UnixStream::connect(&path).map_err(|e| {
-        Error::Iokit(format!(
+        Error::other(format!(
             "could not reach the daemon at {}: {e}\nIs it running? Try `yamete run`.",
             path.display()
         ))
@@ -24,7 +24,7 @@ fn connect() -> Result<UnixStream, Error> {
 fn send(stream: &mut UnixStream, request: &Request) -> Result<(), Error> {
     stream
         .write_all(yamete_proto::to_line(request).as_bytes())
-        .map_err(|e| Error::Iokit(format!("could not send request: {e}")))
+        .map_err(|e| Error::other(format!("could not send request: {e}")))
 }
 
 /// Print the daemon's current state.
@@ -32,13 +32,13 @@ pub fn status() -> Result<(), Error> {
     let mut stream = connect()?;
     stream
         .set_read_timeout(Some(Duration::from_secs(3)))
-        .map_err(|e| Error::Iokit(e.to_string()))?;
+        .map_err(|e| Error::other(e.to_string()))?;
     send(&mut stream, &Request::GetStatus)?;
 
     let mut line = String::new();
     BufReader::new(&stream)
         .read_line(&mut line)
-        .map_err(|e| Error::Iokit(format!("no reply from the daemon: {e}")))?;
+        .map_err(|e| Error::other(format!("no reply from the daemon: {e}")))?;
 
     match serde_json::from_str::<Event>(&line) {
         Ok(Event::Status(s)) => {
@@ -64,9 +64,9 @@ pub fn status() -> Result<(), Error> {
             }
             Ok(())
         }
-        Ok(Event::Error { message }) => Err(Error::Iokit(message)),
-        Ok(other) => Err(Error::Iokit(format!("unexpected reply: {other:?}"))),
-        Err(e) => Err(Error::Iokit(format!("could not parse reply: {e}"))),
+        Ok(Event::Error { message }) => Err(Error::other(message)),
+        Ok(other) => Err(Error::other(format!("unexpected reply: {other:?}"))),
+        Err(e) => Err(Error::other(format!("could not parse reply: {e}"))),
     }
 }
 
@@ -75,13 +75,13 @@ pub fn set_enabled(value: bool) -> Result<(), Error> {
     let mut stream = connect()?;
     stream
         .set_read_timeout(Some(Duration::from_secs(3)))
-        .map_err(|e| Error::Iokit(e.to_string()))?;
+        .map_err(|e| Error::other(e.to_string()))?;
     send(&mut stream, &Request::SetEnabled { value })?;
 
     let mut line = String::new();
     BufReader::new(&stream)
         .read_line(&mut line)
-        .map_err(|e| Error::Iokit(format!("no reply from the daemon: {e}")))?;
+        .map_err(|e| Error::other(format!("no reply from the daemon: {e}")))?;
 
     match serde_json::from_str::<Event>(&line) {
         Ok(Event::Config { config }) => {
@@ -95,8 +95,8 @@ pub fn set_enabled(value: bool) -> Result<(), Error> {
             );
             Ok(())
         }
-        Ok(Event::Error { message }) => Err(Error::Iokit(message)),
-        _ => Err(Error::Iokit("unexpected reply".into())),
+        Ok(Event::Error { message }) => Err(Error::other(message)),
+        _ => Err(Error::other("unexpected reply")),
     }
 }
 
@@ -116,7 +116,7 @@ pub fn listen(as_json: bool) -> Result<(), Error> {
 
     let reader = BufReader::new(stream);
     for line in reader.lines() {
-        let line = line.map_err(|e| Error::Iokit(format!("connection lost: {e}")))?;
+        let line = line.map_err(|e| Error::other(format!("connection lost: {e}")))?;
         if as_json {
             println!("{line}");
             continue;
@@ -142,8 +142,8 @@ pub fn listen(as_json: bool) -> Result<(), Error> {
 pub fn test_action(id: &str, intensity: f32) -> Result<(), Error> {
     let mut stream = connect()?;
     stream
-        .set_read_timeout(Some(Duration::from_millis(500)))
-        .map_err(|e| Error::Iokit(e.to_string()))?;
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .map_err(|e| Error::other(e.to_string()))?;
     send(
         &mut stream,
         &Request::TestAction {
@@ -152,13 +152,18 @@ pub fn test_action(id: &str, intensity: f32) -> Result<(), Error> {
         },
     )?;
 
-    // A successful test produces no reply, so anything that arrives is a complaint.
+    // Daemon replies with Pong once the job is queued.
     let mut line = String::new();
-    if BufReader::new(&stream).read_line(&mut line).is_ok() && !line.trim().is_empty() {
-        if let Ok(Event::Error { message }) = serde_json::from_str::<Event>(&line) {
-            return Err(Error::Iokit(message));
+    BufReader::new(&stream)
+        .read_line(&mut line)
+        .map_err(|e| Error::other(format!("no reply from the daemon: {e}")))?;
+    match serde_json::from_str::<Event>(&line) {
+        Ok(Event::Pong) => {
+            println!("fired `{id}` at intensity {intensity:.2}");
+            Ok(())
         }
+        Ok(Event::Error { message }) => Err(Error::other(message)),
+        Ok(other) => Err(Error::other(format!("unexpected reply: {other:?}"))),
+        Err(e) => Err(Error::other(format!("could not parse reply: {e}"))),
     }
-    println!("fired `{id}` at intensity {intensity:.2}");
-    Ok(())
 }

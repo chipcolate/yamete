@@ -11,9 +11,18 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use yamete_dsp::Tier;
 
+/// Current on-disk / wire config shape. Bumped only when the *meaning* of an existing
+/// field changes, not when optional fields are added with `#[serde(default)]`.
+pub const SCHEMA_VERSION: u32 = 1;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DaemonConfig {
+    /// On-disk schema version. Written on every save; older files migrate in
+    /// [`DaemonConfig::normalize`].
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u32,
+
     /// Master switch. False keeps the daemon resident but stops it acting on anything.
     pub enabled: bool,
     /// Detector tuning, including the sensitivity slider.
@@ -26,20 +35,20 @@ pub struct DaemonConfig {
     /// 1000 gives the sensor's native ~805 Hz and the best detection quality. Reading two
     /// HID devices at that rate is the daemon's dominant cost — measured at 3.15% of a
     /// core, against 0.35% for all the signal processing combined — so this is the one
-    /// knob that meaningfully changes idle power.
-    ///
-    /// | interval | rate   | recall | false positives | CPU   |
-    /// |----------|--------|--------|-----------------|-------|
-    /// | 1000 µs  | 805 Hz | 90%    | 1               | 3.2%  |
-    /// | 2000 µs  | 402 Hz | 90% *  | 3               | ~1.6% |
-    ///
-    /// \* at half rate, recall needs sensitivity raised to about 0.6 to match.
+    /// knob that meaningfully changes idle power. Halving the rate (2000 µs) roughly halves
+    /// that cost and needs a slightly higher sensitivity to keep recall; re-measure with
+    /// `yamete replay` rather than trusting a frozen table.
     pub report_interval_us: u32,
+}
+
+fn default_schema_version() -> u32 {
+    SCHEMA_VERSION
 }
 
 impl Default for DaemonConfig {
     fn default() -> Self {
         DaemonConfig {
+            schema_version: SCHEMA_VERSION,
             enabled: true,
             detector: yamete_dsp::Config::default(),
             actions: vec![Action::default_sound()],
@@ -56,7 +65,9 @@ impl DaemonConfig {
     /// Fold anything left over from an older config layout into the current one.
     ///
     /// Called after loading and after any change arrives over the socket, so the rest of
-    /// the code only ever deals with the current shape.
+    /// the code only ever deals with the current shape. When a future `SCHEMA_VERSION`
+    /// needs real migration steps, run them here from the file's version upward, then
+    /// stamp the current version.
     pub fn normalize(&mut self) {
         for action in &mut self.actions {
             if let ActionKind::Sound { paths, path, .. } = &mut action.kind {
@@ -67,6 +78,7 @@ impl DaemonConfig {
                 }
             }
         }
+        self.schema_version = SCHEMA_VERSION;
     }
 
     /// Reject configurations that would misbehave rather than storing them.
@@ -227,7 +239,12 @@ impl Action {
                 }
             }
             ActionKind::Exec { .. } => {}
-            ActionKind::Webhook { url, .. } => {
+            ActionKind::Webhook {
+                url,
+                method,
+                timeout_ms,
+                ..
+            } => {
                 // An empty URL is simply not filled in yet. A non-empty one that is not
                 // HTTP is a mistake worth naming.
                 let url = url.trim();
@@ -237,11 +254,33 @@ impl Action {
                         self.id
                     ));
                 }
+                let method = method.trim();
+                if !method.is_empty() && !ALLOWED_WEBHOOK_METHODS.iter().any(|m| method.eq_ignore_ascii_case(m))
+                {
+                    return Err(format!(
+                        "action `{}`: webhook method must be one of {}",
+                        self.id,
+                        ALLOWED_WEBHOOK_METHODS.join(", ")
+                    ));
+                }
+                if *timeout_ms == 0 || *timeout_ms > MAX_WEBHOOK_TIMEOUT_MS {
+                    return Err(format!(
+                        "action `{}`: timeout_ms must be between 1 and {MAX_WEBHOOK_TIMEOUT_MS}",
+                        self.id
+                    ));
+                }
             }
         }
         Ok(())
     }
 }
+
+/// Methods the action runner is willing to issue. Free-form methods are a footgun and
+/// not useful for the integrations this is meant for.
+const ALLOWED_WEBHOOK_METHODS: &[&str] = &["GET", "POST", "PUT", "PATCH", "DELETE"];
+
+/// Upper bound so a single webhook cannot stall the action worker indefinitely.
+const MAX_WEBHOOK_TIMEOUT_MS: u64 = 30_000;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -557,6 +596,41 @@ mod tests {
             ..Default::default()
         };
         assert!(config.validate().unwrap_err().contains("http"));
+    }
+
+    #[test]
+    fn webhook_method_and_timeout_are_bounded() {
+        let bad_method = DaemonConfig {
+            actions: vec![Action {
+                id: "hook".into(),
+                kind: ActionKind::Webhook {
+                    url: "https://example.com".into(),
+                    method: "TRACE".into(),
+                    headers: BTreeMap::new(),
+                    body: None,
+                    timeout_ms: 5000,
+                },
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert!(bad_method.validate().unwrap_err().contains("method"));
+
+        let bad_timeout = DaemonConfig {
+            actions: vec![Action {
+                id: "hook".into(),
+                kind: ActionKind::Webhook {
+                    url: "https://example.com".into(),
+                    method: "POST".into(),
+                    headers: BTreeMap::new(),
+                    body: None,
+                    timeout_ms: 60_000,
+                },
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert!(bad_timeout.validate().unwrap_err().contains("timeout_ms"));
     }
 
     #[test]

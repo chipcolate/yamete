@@ -46,10 +46,10 @@ the committed `traces.json` is stale relative to the fixtures.
 
 ### The sensitivity table is replayed, not transcribed
 
-The table in `crates/yamete-dsp/src/config.rs` is a hand-written comment and has drifted
-from the code it documents — at 0.50 it claims 36/40 with one false positive where the
-detector now scores 35/40 with none. `extract-sensitivity.mjs` runs the detector instead,
-so the page cannot repeat that drift.
+`extract-sensitivity.mjs` runs the detector instead of transcribing a comment, so the
+page cannot inherit a stale table. When the corpus or thresholds change, re-run
+`bun run sensitivity` and keep the rustdoc table in `config.rs` in step with
+`src/data/sensitivity.json`.
 
 ### やめて is outlines, not a webfont
 

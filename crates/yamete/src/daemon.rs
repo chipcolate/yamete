@@ -12,9 +12,10 @@ use std::time::{Duration, Instant};
 use tokio::sync::{broadcast, mpsc, watch};
 use yamete_dsp::Detector;
 use yamete_proto::{DaemonConfig, Event, Slap, Status, Telemetry};
-use yamete_sensor::{Error, Imu};
+use yamete_sensor::Imu;
 
 use crate::actions::Executor;
+use crate::error::Error;
 use crate::pump::{Pump, Source};
 use crate::server::{self, Shared};
 use crate::store;
@@ -46,7 +47,7 @@ pub fn run(foreground: bool, exit_with_parent: bool) -> Result<(), Error> {
         .worker_threads(2)
         .enable_all()
         .build()
-        .map_err(|e| Error::Iokit(format!("could not start the async runtime: {e}")))?;
+        .map_err(|e| Error::other(format!("could not start the async runtime: {e}")))?;
 
     let (config_tx, config_rx) = watch::channel(config.clone());
     let (events_tx, _) = broadcast::channel(EVENT_CAPACITY);
@@ -75,7 +76,7 @@ pub fn run(foreground: bool, exit_with_parent: bool) -> Result<(), Error> {
     let socket_path = yamete_proto::socket_path();
     let listener = runtime
         .block_on(server::bind(&socket_path))
-        .map_err(|e| Error::Iokit(format!("could not bind {}: {e}", socket_path.display())))?;
+        .map_err(|e| Error::other(format!("could not bind {}: {e}", socket_path.display())))?;
     tracing::info!("listening on {}", socket_path.display());
 
     {

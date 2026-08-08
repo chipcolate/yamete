@@ -6,7 +6,7 @@
 use std::path::Path;
 
 use yamete_dsp::{Config, Detector, Fixture, Frame};
-use yamete_sensor::Error;
+use crate::error::Error;
 
 /// Result of replaying one fixture.
 pub struct Outcome {
@@ -52,7 +52,7 @@ pub fn detect(fixture: &Fixture, cfg: Config) -> Vec<yamete_dsp::Detection> {
 }
 
 pub fn load(path: &Path) -> Result<Fixture, Error> {
-    Fixture::read(path).map_err(|e| Error::Iokit(e.to_string()))
+    Fixture::read(path).map_err(|e| Error::other(e.to_string()))
 }
 
 /// Keep every `n`th sample, as if the sensor had been configured to report more slowly.

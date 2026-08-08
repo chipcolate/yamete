@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod config;
 
-pub use config::{Action, ActionKind, DaemonConfig, SoundOrder};
+pub use config::{Action, ActionKind, DaemonConfig, SoundOrder, SCHEMA_VERSION};
 
 /// Where the daemon listens.
 ///
@@ -23,10 +23,13 @@ pub fn socket_path() -> PathBuf {
 }
 
 /// Where config, logs and the socket live.
+///
+/// Requires `HOME`. Falling back to `/tmp` would put the control socket on a world-writable
+/// parent where another local user can pre-create the path — fail loudly instead.
 pub fn state_dir() -> PathBuf {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/tmp"));
+        .unwrap_or_else(|| PathBuf::from("/var/empty"));
     home.join("Library/Application Support/com.chipcolate.yamete")
 }
 
@@ -179,9 +182,66 @@ mod tests {
 
     #[test]
     fn state_dir_is_always_absolute() {
-        // Launchd jobs can start with a minimal environment, so a missing HOME must still
-        // produce something bindable rather than a relative path.
+        // Prefer HOME; if it is missing we still refuse a relative path (a `/tmp` fallback
+        // would be hijackable by another local user).
         assert!(state_dir().is_absolute());
+    }
+
+    #[test]
+    fn daemon_config_json_shape_matches_the_ts_mirror() {
+        // Hand-written app/src/types.ts. If this fails, update the TypeScript types in the
+        // same change — do not "fix" the test by loosening it.
+        let v = serde_json::to_value(DaemonConfig::default()).unwrap();
+        let obj = v.as_object().unwrap();
+        for key in [
+            "schema_version",
+            "enabled",
+            "detector",
+            "actions",
+            "report_interval_us",
+        ] {
+            assert!(obj.contains_key(key), "missing top-level key `{key}`");
+        }
+        assert_eq!(obj["schema_version"], SCHEMA_VERSION);
+
+        let det = obj["detector"].as_object().unwrap();
+        for key in [
+            "rate_hz",
+            "highpass_hz",
+            "sta_taus",
+            "lta_tau",
+            "thresholds",
+            "tiers",
+            "cooldown_s",
+            "peak_hold_s",
+            "cusum_leak",
+            "gyro_mode",
+            "gyro_ratio_min",
+            "gyro_peak_min",
+            "gyro_window_s",
+            "min_votes",
+            "full_scale_g",
+            "sensitivity",
+        ] {
+            assert!(det.contains_key(key), "missing detector key `{key}`");
+        }
+    }
+
+    #[test]
+    fn request_and_event_tags_are_stable() {
+        // Tag names are the contract with every client (app, nc, scripts).
+        let req = to_line(&Request::Ping);
+        assert!(req.contains(r#""cmd":"ping""#));
+        let ev = to_line(&Event::Pong);
+        assert!(ev.contains(r#""event":"pong""#));
+    }
+
+    #[test]
+    fn legacy_config_without_schema_version_loads() {
+        let raw = r#"{"enabled":true,"detector":{},"actions":[],"report_interval_us":1000}"#;
+        let mut cfg: DaemonConfig = serde_json::from_str(raw).unwrap();
+        cfg.normalize();
+        assert_eq!(cfg.schema_version, SCHEMA_VERSION);
     }
 
     #[test]

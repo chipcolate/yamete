@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 
 use yamete_dsp::{Config, Detector, Frame};
-use yamete_sensor::Error;
+use crate::error::Error;
 
 use crate::replay;
 
@@ -118,7 +118,7 @@ pub fn at_detections(files: &[PathBuf]) -> Result<(), Error> {
     }
 
     if rows.is_empty() {
-        return Err(Error::Iokit("no detections in the given fixtures".into()));
+        return Err(Error::other("no detections in the given fixtures"));
     }
 
     println!("Detector scores at {} detection(s):\n", rows.len());

@@ -1,7 +1,9 @@
 //! Mirrors of the daemon's wire types.
 //!
-//! Kept hand-written rather than generated: the protocol is small, and a generator would
-//! be more machinery than the thing it generates.
+//! Hand-written on purpose (the protocol is small). Drift is caught by
+//! `crates/yamete-proto` tests that freeze the JSON shape of `DaemonConfig` and the
+//! request/event tag names — if you add a field here, update those tests (and the Rust
+//! types) in the same change.
 
 export type Tier = "micro" | "medium" | "major";
 
@@ -114,6 +116,8 @@ export interface Action {
 }
 
 export interface DaemonConfig {
+  /** Bumped when the meaning of an existing field changes. */
+  schema_version: number;
   enabled: boolean;
   detector: DetectorConfig;
   actions: Action[];

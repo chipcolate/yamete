@@ -242,8 +242,18 @@ fn handle_request(request: Request, shared: &Shared, sub: &mut Subscription) -> 
                     message: format!("no action with id `{id}`"),
                 });
             }
-            let _ = shared.test_action.send((id, intensity.clamp(0.0, 1.0)));
-            None
+            // Reply affirmatively once the job is queued. Clients used to treat "no
+            // reply / timeout" as success, which also swallowed connect and I/O failures.
+            if shared
+                .test_action
+                .send((id, intensity.clamp(0.0, 1.0)))
+                .is_err()
+            {
+                return Some(Event::Error {
+                    message: "action runner is not accepting work".into(),
+                });
+            }
+            Some(Event::Pong)
         }
     }
 }

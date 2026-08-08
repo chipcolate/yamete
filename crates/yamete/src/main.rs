@@ -6,6 +6,7 @@ mod analyze;
 mod calibrate;
 mod client;
 mod daemon;
+mod error;
 mod launchd;
 mod probe;
 mod pump;
@@ -270,8 +271,8 @@ fn main() -> ExitCode {
         // A Mac without the sensor will never grow one. Exiting non-zero would have
         // launchd restart us every ThrottleInterval forever, so report this as a clean
         // stop and let the job stay down.
-        Err(yamete_sensor::Error::NoSensor) => {
-            eprintln!("error: {}", yamete_sensor::Error::NoSensor);
+        Err(err) if err.is_no_sensor() => {
+            eprintln!("error: {err}");
             ExitCode::SUCCESS
         }
         Err(err) => {

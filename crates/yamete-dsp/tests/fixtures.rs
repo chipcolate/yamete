@@ -10,8 +10,8 @@
 //!   thing unusable, so the budget is zero.
 //! * **Deliberate abuse gets a small budget.** `desk-bump` is 30 s of banging the desk as
 //!   hard as possible next to the laptop. One leak is tolerable.
-//! * **Recall is held at 85 %.** Measured at 90 % (36/40) when these bounds were set, so
-//!   there is headroom for hardware variation before this trips.
+//! * **Recall is held at 85 %.** Measured at ~88 % (35/40) at the default sensitivity when
+//!   these bounds were last checked, so there is headroom for hardware variation.
 //!
 //! Fixtures are recorded with `cargo run -p yamete -- record-suite`, and thresholds are
 //! chosen with `cargo run -p yamete -- sweep`. The suite is skipped rather than failed

@@ -10,8 +10,9 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 use yamete_dsp::Fixture;
-use yamete_sensor::{Error, Imu};
+use yamete_sensor::Imu;
 
+use crate::error::Error;
 use crate::pump::{Pump, Source};
 
 /// A metronome for takes that need a known number of slaps.
@@ -145,7 +146,7 @@ pub fn run(rec: &Recording<'_>, out: &Path) -> Result<(), Error> {
 
     fixture
         .write(out)
-        .map_err(|e| Error::Iokit(format!("could not write {}: {e}", out.display())))?;
+        .map_err(|e| Error::other(format!("could not write {}: {e}", out.display())))?;
 
     println!(
         "  wrote {} — {} accel + {} gyro over {:.1}s ({:.0} Hz){}",

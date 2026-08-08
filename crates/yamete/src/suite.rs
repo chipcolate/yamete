@@ -8,7 +8,7 @@
 use std::io::Write;
 use std::path::Path;
 
-use yamete_sensor::Error;
+use crate::error::Error;
 
 use crate::calibrate::{self, Cue, Recording};
 
@@ -97,7 +97,7 @@ pub fn run(dir: &Path, only: Option<&str>) -> Result<(), Error> {
         .collect();
 
     if takes.is_empty() {
-        return Err(Error::Iokit(format!(
+        return Err(Error::other(format!(
             "no take matches `{}`. Available: {}",
             only.unwrap_or(""),
             TAKES.iter().map(|t| t.label).collect::<Vec<_>>().join(", "),

@@ -506,15 +506,43 @@ fn execute(audio: &mut Option<AudioManager<DefaultBackend>>, last_sound: &mut In
                 builder = builder.header("content-type", "application/json");
             }
 
+            // Never log the full URL — query strings often carry API keys/tokens.
+            let safe = redact_url(&url);
             match builder.body(body.as_bytes()) {
                 Ok(request) => {
                     if let Err(e) = agent.run(request) {
-                        tracing::warn!("webhook {method} {url} failed: {e}");
+                        tracing::warn!("webhook {method} {safe} failed: {e}");
                     }
                 }
-                Err(e) => tracing::warn!("webhook {method} {url} is malformed: {e}"),
+                Err(e) => tracing::warn!("webhook {method} {safe} is malformed: {e}"),
             }
         }
+    }
+}
+
+/// Loggable form of a webhook URL: scheme + host + path, query stripped.
+fn redact_url(url: &str) -> String {
+    match url.split_once('?') {
+        Some((base, _)) => format!("{base}?[redacted]"),
+        None => url.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod redact_tests {
+    use super::redact_url;
+
+    #[test]
+    fn strips_query_string() {
+        assert_eq!(
+            redact_url("https://hooks.example/x?token=secret"),
+            "https://hooks.example/x?[redacted]"
+        );
+    }
+
+    #[test]
+    fn leaves_queryless_urls_alone() {
+        assert_eq!(redact_url("https://example/hook"), "https://example/hook");
     }
 }
 

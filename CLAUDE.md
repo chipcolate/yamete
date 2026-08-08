@@ -58,11 +58,12 @@ Everything here is undocumented and was established by experiment.
   moment of a real slap, CUSUM reads *lower* than during idle noise, and kurtosis is a
   coin flip. Use `analyze --at-detections`, because whole-fixture percentiles are
   dominated by the quiet 98 % and say nothing about reachability.
-- **The gyroscope is the discriminator, not amplitude.** Desk bumps reach 0.56 g where a
-  real slap is 0.05 g, so peak amplitude cannot separate them — the false positives are
-  frequently *larger* than the events. Striking the lid applies a torque about the hinge;
-  a knock through the desk mostly translates the machine. Slaps run 109–1604 deg/s per g,
-  everything else 12–254.
+- **The gyroscope is the discriminator, not amplitude.** In the committed corpus a desk
+  bump peaks at 0.73 g where a hard slap is 0.52 g — the rejected impact is larger — while
+  rotation goes the other way (≈15 °/s vs ≈48 °/s). Striking the lid applies a torque about
+  the hinge; a knock through the desk mostly translates the machine. Gate on
+  `gyro_ratio_min` ∪ `gyro_peak_min` (defaults 175 °/s per g and 15 °/s); re-measure with
+  `yamete analyze` / `sweep` rather than trusting a published °/s-per-g band.
 - **Severity is amplitude; votes are confidence.** Gating tiers on how many detectors
   agreed reported a 0.62 g whack as a micro shock. They answer different questions.
 - **The sensitivity slider must scale the gyro gate too.** Scaling only the amplitude
@@ -139,6 +140,9 @@ Recorded on a Mac16,5. They contain lighter slaps (0.04–0.07 g) than typical l
 
 ## Not ours
 
-Nothing here derives from other projects in this space. Their published thresholds were
-measured, found to sit below this machine's noise floor, and none were adopted. Do not
-add attributions implying otherwise.
+The detector statistics (STA/LTA, CUSUM, kurtosis, peak/MAD, envelope) are classic impact /
+seismic-style measures. Thresholds, the gyro corroboration gate, and the shipping defaults
+were measured on this hardware. Other projects in the Mac slap-detection space were
+measured against this machine; their published thresholds sat below the noise floor and
+**none of their thresholds or code were adopted**. Do not add attributions implying
+otherwise.

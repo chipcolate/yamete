@@ -145,9 +145,11 @@ pub struct Config {
     /// Minimum angular rate per unit linear acceleration, in deg/s per g, for an impact
     /// to count as a strike on the machine rather than a knock transmitted through it.
     ///
-    /// Measured over the recorded corpus: real slaps run 109-1604, while desk bumps,
-    /// trackpad clicks and lid adjustments run 12-254. This single ratio does what neither
-    /// peak amplitude nor the five-detector vote could.
+    /// Peak amplitude alone cannot separate the two populations — a desk bump in the
+    /// committed corpus peaks higher (0.73 g) than a hard slap (0.52 g) while rotating
+    /// far less. The gate is the union of this ratio and [`Self::gyro_peak_min`]. Defaults
+    /// are measured; re-run `yamete analyze` / `sweep` on a new machine rather than
+    /// copying a published band.
     pub gyro_ratio_min: f32,
 
     /// Absolute peak angular rate, in deg/s, that on its own confirms a strike.
@@ -181,19 +183,20 @@ pub struct Config {
     /// (the obvious implementation) would be close to inert, because on this hardware it
     /// is the gyro gate that rejects marginal impacts, not the amplitude floor.
     ///
-    /// Measured over the recorded corpus (40 slaps, 150 s of negatives):
+    /// Measured by replaying the fixture corpus (`site/scripts/extract-sensitivity.mjs`
+    /// / `yamete replay`); regenerate rather than editing by hand:
     ///
     /// | slider | slaps caught | false positives | character |
     /// |--------|--------------|-----------------|-----------|
     /// | 0.20   | 13/40        | 0               | only a deliberate whack |
-    /// | 0.35   | 20/40        | 0               | never fires by accident |
-    /// | 0.50   | 36/40        | 1               | default |
-    /// | 0.65   | 39/40        | 8               | catches everything, desk bumps too |
-    /// | 0.80   | 40/40        | 12              | twitchy |
-    /// | 1.00   | 40/40        | 20              | anything that shakes the desk |
+    /// | 0.35   | 19/40        | 0               | never fires by accident |
+    /// | 0.50   | 35/40        | 0               | default |
+    /// | 0.65   | 39/40        | 7               | catches almost everything, desk bumps too |
+    /// | 0.80   | 39/40        | 11              | twitchy |
+    /// | 1.00   | 40/40        | 18              | anything that shakes the desk |
     ///
-    /// Typing never triggers a detection at any slider position, which is the one case
-    /// that would make the app unusable.
+    /// Typing stays silent at the default; at max sensitivity the false positives are
+    /// desk-bump class impacts, not keystrokes. See `site/src/data/sensitivity.json`.
     pub sensitivity: f32,
 }
 

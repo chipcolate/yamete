@@ -6,14 +6,16 @@
 //! to show that prompt in. It also means no `sudo`, no privileged helper, and no signing
 //! requirements for a local install.
 //!
-//! The Tauri app will register the same job through `SMAppService` so it appears in
-//! System Settings → Login Items. This path stays for CLI-only installs and for developing
-//! against the daemon before the app exists.
+//! This is the **always-on** lifetime model: detection outlives the menu bar app. The
+//! app's alternative is to spawn the bundled binary as a child (`supervisor.rs`) with
+//! `--exit-with-parent`, so quitting the app stops detection. Both share the same socket
+//! and config; only ownership differs. Prefer one model per machine — running both means
+//! the app attaches to the agent and does not kill it on quit.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use yamete_sensor::Error;
+use crate::error::Error;
 
 /// launchd job label, and the plist filename.
 pub const LABEL: &str = "com.chipcolate.yamete.daemon";
@@ -113,12 +115,12 @@ fn launchctl(args: &[&str]) -> Result<String, Error> {
     let out = Command::new("/bin/launchctl")
         .args(args)
         .output()
-        .map_err(|e| Error::Iokit(format!("could not run launchctl: {e}")))?;
+        .map_err(|e| Error::other(format!("could not run launchctl: {e}")))?;
     let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
     if out.status.success() {
         Ok(stdout)
     } else {
-        Err(Error::Iokit(format!(
+        Err(Error::other(format!(
             "launchctl {} failed: {}{}",
             args.join(" "),
             String::from_utf8_lossy(&out.stderr).trim(),
@@ -155,7 +157,7 @@ fn bootout_and_wait() -> Result<(), Error> {
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    Err(Error::Iokit(format!(
+    Err(Error::other(format!(
         "{LABEL} is still registered five seconds after bootout; \
          try `launchctl bootout {}` by hand",
         service_target()
@@ -177,14 +179,14 @@ fn default_install_dir() -> PathBuf {
 fn replace_binary(from: &Path, to: &Path) -> Result<(), Error> {
     if let Some(parent) = to.parent() {
         std::fs::create_dir_all(parent)
-            .map_err(|e| Error::Iokit(format!("could not create {}: {e}", parent.display())))?;
+            .map_err(|e| Error::other(format!("could not create {}: {e}", parent.display())))?;
     }
     if to.exists() {
         std::fs::remove_file(to)
-            .map_err(|e| Error::Iokit(format!("could not replace {}: {e}", to.display())))?;
+            .map_err(|e| Error::other(format!("could not replace {}: {e}", to.display())))?;
     }
     std::fs::copy(from, to).map_err(|e| {
-        Error::Iokit(format!(
+        Error::other(format!(
             "could not copy {} to {}: {e}",
             from.display(),
             to.display()
@@ -193,7 +195,7 @@ fn replace_binary(from: &Path, to: &Path) -> Result<(), Error> {
     {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(to, std::fs::Permissions::from_mode(0o755)).map_err(|e| {
-            Error::Iokit(format!("could not make {} executable: {e}", to.display()))
+            Error::other(format!("could not make {} executable: {e}", to.display()))
         })?;
     }
     Ok(())
@@ -204,11 +206,11 @@ pub fn install(program: Option<PathBuf>, copy: bool) -> Result<(), Error> {
     let source = match program {
         Some(p) => p,
         None => std::env::current_exe()
-            .map_err(|e| Error::Iokit(format!("could not find my own path: {e}")))?,
+            .map_err(|e| Error::other(format!("could not find my own path: {e}")))?,
     };
     let source = source.canonicalize().unwrap_or(source);
     if !source.exists() {
-        return Err(Error::Iokit(format!("{} does not exist", source.display())));
+        return Err(Error::other(format!("{} does not exist", source.display())));
     }
 
     // Stop the old job before touching anything it might be executing, and wait for it
@@ -239,20 +241,20 @@ pub fn install(program: Option<PathBuf>, copy: bool) -> Result<(), Error> {
     // launchd does not create these, and a missing directory makes the job fail to spawn
     // with no obvious explanation.
     std::fs::create_dir_all(&logs)
-        .map_err(|e| Error::Iokit(format!("could not create {}: {e}", logs.display())))?;
+        .map_err(|e| Error::other(format!("could not create {}: {e}", logs.display())))?;
 
     let path = plist_path();
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
-            .map_err(|e| Error::Iokit(format!("could not create {}: {e}", parent.display())))?;
+            .map_err(|e| Error::other(format!("could not create {}: {e}", parent.display())))?;
     }
     std::fs::write(&path, plist(&program, &logs))
-        .map_err(|e| Error::Iokit(format!("could not write {}: {e}", path.display())))?;
+        .map_err(|e| Error::other(format!("could not write {}: {e}", path.display())))?;
     {
         use std::os::unix::fs::PermissionsExt;
         // Must not be group- or world-writable or launchd refuses to load it.
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))
-            .map_err(|e| Error::Iokit(format!("could not set permissions: {e}")))?;
+            .map_err(|e| Error::other(format!("could not set permissions: {e}")))?;
     }
 
     launchctl(&["bootstrap", &domain(), &path.to_string_lossy()])?;
@@ -278,7 +280,7 @@ pub fn uninstall() -> Result<(), Error> {
     }
     if path.exists() {
         std::fs::remove_file(&path)
-            .map_err(|e| Error::Iokit(format!("could not remove {}: {e}", path.display())))?;
+            .map_err(|e| Error::other(format!("could not remove {}: {e}", path.display())))?;
         did_something = true;
     }
 
@@ -293,7 +295,7 @@ pub fn uninstall() -> Result<(), Error> {
 /// Restart the running agent, picking up a new binary or config.
 pub fn restart() -> Result<(), Error> {
     if !is_loaded() {
-        return Err(Error::Iokit(format!(
+        return Err(Error::other(format!(
             "{LABEL} is not installed — run `yamete install` first"
         )));
     }

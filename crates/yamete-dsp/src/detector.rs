@@ -1,9 +1,11 @@
-//! The slap detector: a five-way vote over the accelerometer, corroborated by the gyroscope.
+//! The slap detector: an ensemble over the accelerometer, corroborated by the gyroscope.
 //!
 //! No single statistic separates "someone hit this laptop" from "someone typed hard" — each
-//! detector here is sensitive to a different aspect of an impact, and requiring several to
-//! agree is what keeps the false-positive rate down. The five are ported from the reference
-//! implementations; the gyroscope stage is new.
+//! score is sensitive to a different aspect of an impact, and requiring several to agree
+//! is what keeps the false-positive rate down. The statistics (STA/LTA, CUSUM, kurtosis,
+//! peak/MAD, envelope) are classic impact / seismic-style measures; the thresholds and the
+//! gyroscope corroboration gate were measured on this hardware. No thresholds or code were
+//! taken from other Mac slap-detection projects.
 
 use serde::{Deserialize, Serialize};
 

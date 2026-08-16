@@ -6,7 +6,7 @@ export const en: Strings = {
     title: "yamete — slap detection for Apple Silicon MacBooks",
     description: "Hit the laptop, it makes a noise. A menu bar app that reads the undocumented motion sensor in Apple Silicon MacBooks at 805 Hz and tells a slap from a desk bump.",
     privacyTitle: "Privacy Policy — yamete",
-    privacyDescription: "yamete does not collect or transmit your data. Detection and configuration stay on your Mac.",
+    privacyDescription: "The yamete app does not collect or transmit your data. This website only counts visitors in aggregate.",
   },
   hero: {
     gloss: "stop it",
@@ -81,7 +81,7 @@ export const en: Strings = {
   privacySection: {
     eyebrow: "On your Mac",
     heading: "Nothing leaves unless you send it",
-    lede: "Detection, config and logs stay in your home directory. There is no account, no Chipcolate cloud, and no analytics SDK. The only network paths are ones you configure.",
+    lede: "Detection, config and logs stay in your home directory. There is no account, no Chipcolate cloud, and no analytics SDK in the app. The only network paths are ones you configure. This website only counts visitors in aggregate.",
     localTitle: "Local only",
     localBody: "Sensor samples are processed on-device. Optional scope telemetry is a local socket stream to the menu bar app, off when nobody is watching.",
     accountTitle: "No account",
@@ -144,15 +144,15 @@ export const en: Strings = {
     back: "← Back to yamete",
     title: "Privacy Policy",
     effectiveLabel: "Effective date",
-    effectiveDate: "8 August 2026",
+    effectiveDate: "16 August 2026",
     sections: [
       {
         title: "In one sentence",
-        body: "<p>yamete does not collect, transmit, or share your data with Chipcolate. Detection runs on your Mac; configuration and logs stay under your home directory unless <em>you</em> configure an action that sends something elsewhere.</p>",
+        body: "<p>The yamete <em>app</em> does not collect, transmit, or share your data with Chipcolate. Detection runs on your Mac; configuration and logs stay under your home directory unless <em>you</em> configure an action that sends something elsewhere. This website only counts visitors in aggregate — see below.</p>",
       },
       {
         title: "What data we collect",
-        body: "<p><strong>None.</strong> There is no account, no sign-up, no analytics SDK, no crash reporter that phones home, and no Chipcolate server the app talks to. We do not receive sensor samples, slap events, your config, or device identifiers.</p>",
+        body: "<p><strong>None from the app.</strong> There is no account, no sign-up, no analytics SDK, no crash reporter that phones home, and no Chipcolate server the app talks to. We do not receive sensor samples, slap events, your config, or device identifiers.</p>",
       },
       {
         title: "What the app stores on your Mac",
@@ -172,19 +172,19 @@ export const en: Strings = {
       },
       {
         title: "This website",
-        body: "<p>yamete.app is a static site with no first-party analytics. Hosting providers may process technical data such as IP addresses under their own policies.</p>",
+        body: "<p>yamete.app uses Cloudflare Web Analytics for a privacy-first, cookie-free count of page views and visitors. No personal profiles, no fingerprinting, no ads. It does not see the app, your slaps, or anything on your Mac. Hosting providers may still process technical data such as IP addresses under their own policies.</p>",
       },
       {
         title: "Third parties",
-        body: "<p>No advertising or analytics SDKs. Builds are signed and notarised for Gatekeeper and published as GitHub Releases — not through the Mac App Store.</p>",
+        body: "<p>No advertising or analytics SDKs in the app. Builds are signed and notarised for Gatekeeper and published as GitHub Releases — not through the Mac App Store. The only analytics we run is the light visitor count on this website, described above.</p>",
       },
       {
         title: "Children's privacy",
-        body: "<p>yamete does not knowingly collect information from anyone, including children. Because we collect no personal data, there is nothing for Chipcolate to delete on request.</p>",
+        body: "<p>The app does not knowingly collect information from anyone, including children. The website's visitor counts are aggregate and cookieless. Chipcolate cannot identify you from either, so there is nothing personal to delete on request.</p>",
       },
       {
         title: "Your rights (GDPR, CCPA, and similar)",
-        body: "<p>Chipcolate holds no personal data about yamete users from the product itself. Data on your Mac is under your control.</p>",
+        body: "<p>Chipcolate holds no personal data about yamete users from the app. Data on your Mac is under your control. Website visitor counts are aggregate; we cannot look someone up from them.</p>",
       },
       {
         title: "Changes to this policy",

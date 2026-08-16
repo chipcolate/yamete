@@ -65,5 +65,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, ""
   </head>
   <body>
     <slot />
+    <!-- Cloudflare Web Analytics -->
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "a460373f0539461eaf74593629fc84e0"}'
+    ></script>
+    <!-- End Cloudflare Web Analytics -->
   </body>
 </html>

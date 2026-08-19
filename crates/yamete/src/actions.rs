@@ -575,7 +575,10 @@ mod tests {
     fn intensity_swings_symmetrically_around_the_base() {
         let soft = intensity_gain_db(0.0, 40.0);
         let hard = intensity_gain_db(1.0, 40.0);
-        assert!(soft < 0.0, "a gentle spank should be quieter, got {soft} dB");
+        assert!(
+            soft < 0.0,
+            "a gentle spank should be quieter, got {soft} dB"
+        );
         assert!(hard > 0.0, "a hard spank should be louder, got {hard} dB");
 
         // ±40% of amplitude: 0.6x and 1.4x.

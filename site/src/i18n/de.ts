@@ -128,7 +128,7 @@ export const de: Strings = {
       },
       eightySix: {
         title: "Eighty-Six",
-        body: "Restaurantreservierungen ohne Provision, auf Seiten, die nach Ihnen aussehen. Gästedaten bleiben bei Ihnen.",
+        body: "Ihre Marke kommt zuerst. Ein Betriebssystem für Restaurants: digitale Speisekarten, provisionsfreie Reservierungen, White-Label-Gästeseiten und Gästedaten, die bei Ihnen bleiben.",
       },
       chipcolate: {
         title: "Chipcolate",

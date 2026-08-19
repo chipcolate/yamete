@@ -148,7 +148,7 @@ percentile of an *idle* laptop, so a detector built on it fires on nothing but n
 ```sh
 yamete record-suite                                # record the corpus, with a metronome
 yamete analyze fixtures/idle.fixture.gz            # what the detectors read when quiet
-yamete analyze fixtures/slap-*.gz --at-detections  # and at a real slap
+yamete analyze fixtures/spank-*.gz --at-detections  # and at a real spank
 yamete sweep fixtures/*.gz --knob gyro-ratio       # score a threshold against everything
 yamete replay fixtures/*.gz -v                     # what the current settings would do
 ```

@@ -2,11 +2,11 @@
   "generated_from": "fixtures/",
   "traces": [
     {
-      "id": "slap",
+      "id": "spank",
       "title": "Spank the lid",
       "note": "Striking the lid torques it about the hinge.",
       "verdict": "fires",
-      "fixture": "slap-hard",
+      "fixture": "spank-hard",
       "at": 22.771,
       "peak_g": 0.5223,
       "gyro_peak": 47.67,

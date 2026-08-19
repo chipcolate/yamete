@@ -59,7 +59,7 @@ const rows = STEPS.map(({ at, character }) => {
 });
 
 // The corpus these numbers describe, counted rather than asserted.
-const silent = files.filter((f) => !/slap-/.test(f));
+const silent = files.filter((f) => !/spank-/.test(f));
 const corpus = { slaps: rows[0].total, quiet_seconds: silent.length * 30, quiet_files: silent.length };
 
 mkdirSync(dirname(OUT), { recursive: true });

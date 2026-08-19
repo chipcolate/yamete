@@ -109,7 +109,7 @@ enum Command {
 
     /// Record a raw sensor trace to a fixture file for offline tuning.
     Calibrate {
-        /// Short name for what is being recorded, e.g. `slap-lid-left` or `typing`.
+        /// Short name for what is being recorded, e.g. `spank-lid-left` or `typing`.
         #[arg(long)]
         label: String,
         /// Recording length, in seconds.

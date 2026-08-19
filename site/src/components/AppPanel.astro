@@ -8,7 +8,7 @@ interface Props { lang: Locale }
 const { lang } = Astro.props;
 const s = getStrings(lang).appPanel;
 
-const slap = (data.traces as Trace[]).find((t) => t.id === "slap")!;
+const spank = (data.traces as Trace[]).find((t) => t.id === "spank")!;
 
 const H = 128;
 const FULL_G = 0.8;
@@ -20,7 +20,7 @@ const TIERS = [
 ];
 const floor = H - CHART.pad;
 const yFor = (g: number) => floor - (g / FULL_G) * (floor - CHART.pad);
-const hitAt = (slap.accel.indexOf(Math.max(...slap.accel)) / (slap.accel.length - 1)) * CHART.w;
+const hitAt = (spank.accel.indexOf(Math.max(...spank.accel)) / (spank.accel.length - 1)) * CHART.w;
 
 const NAV = [
   { glyph: "◠", label: s.navMonitor },
@@ -77,9 +77,9 @@ const NAV = [
               ))
             }
             <line class="hit" x1={hitAt} y1="0" x2={hitAt} y2={floor} vector-effect="non-scaling-stroke" />
-            <path class="gyrofill" d={area(slap.gyro, FULL_DPS, H)} />
-            <path class="gyroline" d={line(slap.gyro, FULL_DPS, H)} fill="none" vector-effect="non-scaling-stroke" />
-            <path class="accelline" d={line(slap.accel, FULL_G, H)} fill="none" vector-effect="non-scaling-stroke" />
+            <path class="gyrofill" d={area(spank.gyro, FULL_DPS, H)} />
+            <path class="gyroline" d={line(spank.gyro, FULL_DPS, H)} fill="none" vector-effect="non-scaling-stroke" />
+            <path class="accelline" d={line(spank.accel, FULL_G, H)} fill="none" vector-effect="non-scaling-stroke" />
           </svg>
 
           <div class="legend mono">

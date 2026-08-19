@@ -8,7 +8,7 @@ const { lang } = Astro.props;
 const s = getStrings(lang).discriminator;
 
 const traces = data.traces as Trace[];
-const order = ["desk-bump", "slap", "trackpad", "typing"];
+const order = ["desk-bump", "spank", "trackpad", "typing"];
 const points = order.map((id) => {
   const t = traces.find((x) => x.id === id)!;
   const x = Math.min(t.peak_g / ACCEL_FULL_SCALE_G, 1) * 100;

@@ -57,7 +57,7 @@ pub fn status() -> Result<(), Error> {
                     ", NO GYRO"
                 }
             );
-            println!("  slaps      {}", s.slaps);
+            println!("  spanks     {}", s.spanks);
             println!("  telemetry  {} subscriber(s)", s.telemetry_subscribers);
             if s.warming_up {
                 println!("  state      warming up (building the background estimate)");
@@ -100,18 +100,18 @@ pub fn set_enabled(value: bool) -> Result<(), Error> {
     }
 }
 
-/// Stream slaps from the running daemon until interrupted.
+/// Stream spanks from the running daemon until interrupted.
 pub fn listen(as_json: bool) -> Result<(), Error> {
     let mut stream = connect()?;
     send(
         &mut stream,
         &Request::Subscribe {
-            slaps: true,
+            spanks: true,
             telemetry: false,
         },
     )?;
     if !as_json {
-        println!("Listening for slaps. Ctrl-C to stop.");
+        println!("Listening for spanks. Ctrl-C to stop.");
     }
 
     let reader = BufReader::new(stream);
@@ -122,7 +122,7 @@ pub fn listen(as_json: bool) -> Result<(), Error> {
             continue;
         }
         match serde_json::from_str::<Event>(&line) {
-            Ok(Event::Slap(s)) => println!(
+            Ok(Event::Spank(s)) => println!(
                 "t={:8.3}s  {:6}  peak {:.4} g  intensity {:.2}  votes {}/5  gyro {:.0} deg/s",
                 s.t,
                 s.tier.as_str(),

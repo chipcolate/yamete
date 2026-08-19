@@ -2,11 +2,11 @@
 
 やめて — *stop it*.
 
-Slap detection for Apple Silicon MacBooks. Hit the laptop, it makes a noise.
+Spank detection for Apple Silicon MacBooks. Hit the laptop, it makes a noise.
 
 The interesting part is that it works at all: the sensor it reads is an undocumented
 Bosch IMU behind the Sensor Processing Unit, invisible to CoreMotion, reachable only as
-vendor-usage-page HID devices. Telling a slap apart from someone thumping the desk turns
+vendor-usage-page HID devices. Telling a spank apart from someone thumping the desk turns
 out to need the gyroscope, which is not where you would first look.
 
 ## Requirements
@@ -51,7 +51,7 @@ The protocol is newline-delimited JSON, so the daemon can be driven by hand:
 ```sh
 nc -U ~/Library/Application\ Support/com.chipcolate.yamete/yamete.sock
 {"cmd":"get_status"}
-{"cmd":"subscribe","slaps":true}
+{"cmd":"subscribe","spanks":true}
 ```
 
 ## Building

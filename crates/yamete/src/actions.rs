@@ -1,4 +1,4 @@
-//! Running actions when a slap lands.
+//! Running actions when a spank lands.
 //!
 //! The critical path is the sound: everything else can take as long as it likes, but the
 //! gap between the hit and the noise is the entire user experience. So audio is decoded
@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 
 use kira::sound::static_sound::StaticSoundData;
 use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
-use yamete_proto::{Action, ActionKind, DaemonConfig, Slap, SoundOrder};
+use yamete_proto::{Action, ActionKind, DaemonConfig, SoundOrder, Spank};
 
 /// How long the audio device stays open after the last sound.
 ///
@@ -22,7 +22,7 @@ use yamete_proto::{Action, ActionKind, DaemonConfig, Slap, SoundOrder};
 /// anything is playing, which measured at 4.2% of a core on an M4 Max — unacceptable for
 /// something meant to sit in the menu bar all day. Releasing it when idle takes that to
 /// nearly nothing, at the cost of a device-open delay on the first sound of a session.
-/// The window is generous so that only the first slap after a genuine lull ever pays it.
+/// The window is generous so that only the first spank after a genuine lull ever pays it.
 const AUDIO_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// How often the worker wakes to check whether the device has gone idle.
@@ -78,7 +78,7 @@ impl Executor {
         let (tx, rx) = mpsc::channel::<Scheduled>();
 
         // Audio lives on its own thread with its own manager: `AudioManager` is not Sync,
-        // and creating one per sound would add device-setup latency to every slap.
+        // and creating one per sound would add device-setup latency to every spank.
         std::thread::Builder::new()
             .name("yamete-actions".into())
             .spawn(move || run_worker(rx))
@@ -127,17 +127,17 @@ impl Executor {
         problems
     }
 
-    /// Fire every action that matches this slap.
-    pub fn dispatch(&mut self, config: &DaemonConfig, slap: &Slap) {
+    /// Fire every action that matches this spank.
+    pub fn dispatch(&mut self, config: &DaemonConfig, spank: &Spank) {
         for action in &config.actions {
-            if action.matches(slap.tier, slap.intensity) {
-                self.run(action, slap);
+            if action.matches(spank.tier, spank.intensity) {
+                self.run(action, spank);
             }
         }
     }
 
     /// Fire one action regardless of its tier and intensity filters, for UI previews.
-    pub fn run(&mut self, action: &Action, slap: &Slap) {
+    pub fn run(&mut self, action: &Action, spank: &Spank) {
         let job = match &action.kind {
             ActionKind::Sound {
                 paths,
@@ -158,7 +158,7 @@ impl Executor {
                 };
 
                 let gain = if *scale_with_intensity {
-                    volume_db + intensity_gain_db(slap.intensity, *intensity_range_pct)
+                    volume_db + intensity_gain_db(spank.intensity, *intensity_range_pct)
                 } else {
                     *volume_db
                 };
@@ -176,7 +176,7 @@ impl Executor {
                 args,
                 stdin_json,
             } => {
-                let vars = template_vars(slap);
+                let vars = template_vars(spank);
                 Job::Exec {
                     program: program.clone(),
                     args: args
@@ -184,8 +184,8 @@ impl Executor {
                         .map(|a| yamete_proto::config::render(a, &vars))
                         .collect(),
                     stdin_json: *stdin_json,
-                    env: env_vars(slap),
-                    payload: serde_json::to_string(slap).unwrap_or_else(|_| "{}".into()),
+                    env: env_vars(spank),
+                    payload: serde_json::to_string(spank).unwrap_or_else(|_| "{}".into()),
                 }
             }
 
@@ -196,7 +196,7 @@ impl Executor {
                 body,
                 timeout_ms,
             } => {
-                let vars = template_vars(slap);
+                let vars = template_vars(spank);
                 Job::Webhook {
                     url: yamete_proto::config::render(url, &vars),
                     method: method.to_uppercase(),
@@ -206,7 +206,7 @@ impl Executor {
                         .collect(),
                     body: match body {
                         Some(t) => yamete_proto::config::render(t, &vars),
-                        None => serde_json::to_string(slap).unwrap_or_else(|_| "{}".into()),
+                        None => serde_json::to_string(spank).unwrap_or_else(|_| "{}".into()),
                     },
                     timeout: Duration::from_millis(*timeout_ms),
                 }
@@ -216,7 +216,7 @@ impl Executor {
         let due = Instant::now() + Duration::from_millis(u64::from(action.delay_ms));
 
         // A full queue means the worker is wedged. Dropping the job is right: the
-        // detector must never block, and a backlog of stale slap sounds helps nobody.
+        // detector must never block, and a backlog of stale spank sounds helps nobody.
         if self.tx.send(Scheduled { due, job }).is_err() {
             tracing::error!("action worker has gone away");
         }
@@ -237,7 +237,7 @@ impl Executor {
                     }
                     SoundOrder::Random => {
                         // Draw from everything *except* the last pick. Uniform picking
-                        // repeats about 1 slap in n, which people hear as the randomness
+                        // repeats about 1 spank in n, which people hear as the randomness
                         // being broken rather than as randomness; rerolling once only
                         // reduces that rather than removing it.
                         let pool: Vec<&PathBuf> = candidates
@@ -321,7 +321,7 @@ fn is_audio(path: &Path) -> bool {
 
 /// Gain adjustment for a given intensity, as a decibel offset from the base volume.
 ///
-/// Symmetric about mid-intensity: a middling slap plays at exactly the configured volume,
+/// Symmetric about mid-intensity: a middling spank plays at exactly the configured volume,
 /// so turning this on does not quietly make everything quieter than the system volume the
 /// user chose. `range_pct` is the swing either side, expressed as a percentage of
 /// amplitude because that is what a slider labelled "±40%" should mean.
@@ -332,25 +332,25 @@ fn intensity_gain_db(intensity: f32, range_pct: f32) -> f32 {
 }
 
 /// Values available to `{{...}}` placeholders.
-fn template_vars(slap: &Slap) -> BTreeMap<&'static str, String> {
+fn template_vars(spank: &Spank) -> BTreeMap<&'static str, String> {
     let mut v = BTreeMap::new();
-    v.insert("tier", slap.tier.as_str().to_string());
-    v.insert("intensity", format!("{:.3}", slap.intensity));
-    v.insert("peak_g", format!("{:.4}", slap.peak_g));
-    v.insert("votes", slap.votes.to_string());
-    v.insert("gyro_peak", format!("{:.2}", slap.gyro_peak));
-    v.insert("gyro_ratio", format!("{:.1}", slap.gyro_ratio));
-    v.insert("gyro_confirmed", slap.gyro_confirmed.to_string());
-    v.insert("t", format!("{:.3}", slap.t));
-    v.insert("axis_x", format!("{:.4}", slap.axis[0]));
-    v.insert("axis_y", format!("{:.4}", slap.axis[1]));
-    v.insert("axis_z", format!("{:.4}", slap.axis[2]));
+    v.insert("tier", spank.tier.as_str().to_string());
+    v.insert("intensity", format!("{:.3}", spank.intensity));
+    v.insert("peak_g", format!("{:.4}", spank.peak_g));
+    v.insert("votes", spank.votes.to_string());
+    v.insert("gyro_peak", format!("{:.2}", spank.gyro_peak));
+    v.insert("gyro_ratio", format!("{:.1}", spank.gyro_ratio));
+    v.insert("gyro_confirmed", spank.gyro_confirmed.to_string());
+    v.insert("t", format!("{:.3}", spank.t));
+    v.insert("axis_x", format!("{:.4}", spank.axis[0]));
+    v.insert("axis_y", format!("{:.4}", spank.axis[1]));
+    v.insert("axis_z", format!("{:.4}", spank.axis[2]));
     v
 }
 
 /// The same values as `YAMETE_*` environment variables, for shell one-liners.
-fn env_vars(slap: &Slap) -> Vec<(String, String)> {
-    template_vars(slap)
+fn env_vars(spank: &Spank) -> Vec<(String, String)> {
+    template_vars(spank)
         .into_iter()
         .map(|(k, v)| (format!("YAMETE_{}", k.to_uppercase()), v))
         .collect()
@@ -549,8 +549,8 @@ mod tests {
     use super::*;
     use yamete_dsp::Tier;
 
-    fn slap(intensity: f32) -> Slap {
-        Slap {
+    fn spank(intensity: f32) -> Spank {
+        Spank {
             t: 12.5,
             tier: Tier::Major,
             peak_g: 0.4321,
@@ -575,8 +575,8 @@ mod tests {
     fn intensity_swings_symmetrically_around_the_base() {
         let soft = intensity_gain_db(0.0, 40.0);
         let hard = intensity_gain_db(1.0, 40.0);
-        assert!(soft < 0.0, "a gentle slap should be quieter, got {soft} dB");
-        assert!(hard > 0.0, "a hard slap should be louder, got {hard} dB");
+        assert!(soft < 0.0, "a gentle spank should be quieter, got {soft} dB");
+        assert!(hard > 0.0, "a hard spank should be louder, got {hard} dB");
 
         // ±40% of amplitude: 0.6x and 1.4x.
         assert!((soft - 20.0 * 0.6f32.log10()).abs() < 1e-3);
@@ -599,7 +599,7 @@ mod tests {
             assert!(g.is_finite(), "gain must never be infinite");
             previous = g;
         }
-        // Even at full range a silent slap must not produce negative infinity.
+        // Even at full range a silent spank must not produce negative infinity.
         assert!(intensity_gain_db(0.0, 100.0) > -40.0);
     }
 
@@ -629,7 +629,7 @@ mod tests {
 
     #[test]
     fn template_vars_cover_the_whole_event() {
-        let v = template_vars(&slap(0.8));
+        let v = template_vars(&spank(0.8));
         assert_eq!(v["tier"], "major");
         assert_eq!(v["intensity"], "0.800");
         assert_eq!(v["votes"], "4");
@@ -639,7 +639,7 @@ mod tests {
 
     #[test]
     fn env_vars_are_prefixed_and_uppercased() {
-        let env: BTreeMap<String, String> = env_vars(&slap(0.8)).into_iter().collect();
+        let env: BTreeMap<String, String> = env_vars(&spank(0.8)).into_iter().collect();
         assert_eq!(env["YAMETE_TIER"], "major");
         assert_eq!(env["YAMETE_INTENSITY"], "0.800");
         assert_eq!(env["YAMETE_GYRO_RATIO"], "512.2");
@@ -882,7 +882,7 @@ mod tests {
     #[test]
     fn the_default_action_delays_enough_to_clear_the_impact() {
         // Detection is fast enough that a zero delay puts the sound underneath the
-        // physical slap. Anything in the tens of milliseconds reads as a response
+        // physical spank. Anything in the tens of milliseconds reads as a response
         // rather than an echo.
         let action = Action::default_sound();
         assert!(

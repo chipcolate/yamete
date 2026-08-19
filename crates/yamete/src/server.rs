@@ -1,7 +1,7 @@
 //! The control socket.
 //!
 //! Newline-delimited JSON over a unix domain socket. Clients connect, optionally subscribe
-//! to slaps and/or telemetry, and can read or replace the configuration. Debuggable with
+//! to spanks and/or telemetry, and can read or replace the configuration. Debuggable with
 //! `nc -U ~/Library/Application\ Support/com.chipcolate.yamete/yamete.sock`.
 
 use std::path::{Path, PathBuf};
@@ -104,25 +104,25 @@ pub async fn serve(listener: UnixListener, shared: Shared) {
 
 /// Per-connection subscription state.
 struct Subscription {
-    slaps: bool,
+    spanks: bool,
     telemetry: bool,
     counter: Arc<AtomicUsize>,
 }
 
 impl Subscription {
-    fn set(&mut self, slaps: bool, telemetry: bool) {
+    fn set(&mut self, spanks: bool, telemetry: bool) {
         if telemetry && !self.telemetry {
             self.counter.fetch_add(1, Ordering::Relaxed);
         } else if !telemetry && self.telemetry {
             self.counter.fetch_sub(1, Ordering::Relaxed);
         }
-        self.slaps = slaps;
+        self.spanks = spanks;
         self.telemetry = telemetry;
     }
 
     fn wants(&self, event: &Event) -> bool {
         match event {
-            Event::Slap(_) => self.slaps,
+            Event::Spank(_) => self.spanks,
             Event::Telemetry(_) => self.telemetry,
             // Config, status and errors are replies, not subscriptions.
             _ => false,
@@ -146,7 +146,7 @@ async fn handle(stream: UnixStream, shared: Shared) -> std::io::Result<()> {
     let mut events = shared.events.subscribe();
 
     let mut sub = Subscription {
-        slaps: false,
+        spanks: false,
         telemetry: false,
         counter: Arc::clone(&shared.telemetry_subscribers),
     };
@@ -231,8 +231,8 @@ fn handle_request(request: Request, shared: &Shared, sub: &mut Subscription) -> 
             })
         }
 
-        Request::Subscribe { slaps, telemetry } => {
-            sub.set(slaps, telemetry);
+        Request::Subscribe { spanks, telemetry } => {
+            sub.set(spanks, telemetry);
             None
         }
 
@@ -266,7 +266,7 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         (
             Subscription {
-                slaps: false,
+                spanks: false,
                 telemetry: false,
                 counter: Arc::clone(&counter),
             },
@@ -274,8 +274,8 @@ mod tests {
         )
     }
 
-    fn slap_event() -> Event {
-        Event::Slap(yamete_proto::Slap {
+    fn spank_event() -> Event {
+        Event::Spank(yamete_proto::Spank {
             t: 0.0,
             tier: yamete_dsp::Tier::Major,
             peak_g: 0.1,
@@ -301,10 +301,10 @@ mod tests {
     #[test]
     fn subscriptions_filter_by_kind() {
         let (mut sub, _) = subscription();
-        assert!(!sub.wants(&slap_event()));
+        assert!(!sub.wants(&spank_event()));
 
         sub.set(true, false);
-        assert!(sub.wants(&slap_event()));
+        assert!(sub.wants(&spank_event()));
         assert!(!sub.wants(&telemetry_event()));
 
         sub.set(true, true);
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn replies_are_never_delivered_as_subscription_events() {
-        // Otherwise a client that subscribes to slaps would also receive every other
+        // Otherwise a client that subscribes to spanks would also receive every other
         // client's config replies.
         let (mut sub, _) = subscription();
         sub.set(true, true);
@@ -388,7 +388,7 @@ mod tests {
             version: "test".into(),
             has_gyro: true,
             uptime_s: 1.0,
-            slaps: 3,
+            spanks: 3,
             rate_hz: 805.0,
             warming_up: false,
             telemetry_subscribers: 0,
@@ -450,7 +450,7 @@ mod tests {
 
         match ask(&h, r#"{"cmd":"get_status"}"#).await {
             Event::Status(s) => {
-                assert_eq!(s.slaps, 3);
+                assert_eq!(s.spanks, 3);
                 assert!(s.has_gyro);
             }
             other => panic!("expected status, got {other:?}"),
@@ -560,7 +560,7 @@ mod tests {
         tokio::spawn(serve(listener, h.shared.clone()));
 
         let (mut lines, mut w) = connect(&h).await;
-        w.write_all(b"{\"cmd\":\"subscribe\",\"slaps\":true}\n")
+        w.write_all(b"{\"cmd\":\"subscribe\",\"spanks\":true}\n")
             .await
             .unwrap();
 
@@ -579,14 +579,14 @@ mod tests {
                 scores: Default::default(),
                 dropped: 0,
             }));
-        let _ = h.shared.events.send(slap_event());
+        let _ = h.shared.events.send(spank_event());
 
         let line = tokio::time::timeout(Duration::from_secs(2), lines.next_line())
             .await
             .expect("timed out")
             .unwrap()
             .unwrap();
-        assert!(line.contains(r#""event":"slap""#), "got {line}");
+        assert!(line.contains(r#""event":"spank""#), "got {line}");
 
         std::fs::remove_dir_all(h.path.parent().unwrap()).ok();
     }
@@ -647,7 +647,7 @@ mod tests {
                 version: "test".into(),
                 has_gyro: false,
                 uptime_s: 99.0,
-                slaps: 42,
+                spanks: 42,
                 rate_hz: 804.0,
                 warming_up: true,
                 telemetry_subscribers: 0,
@@ -657,7 +657,7 @@ mod tests {
 
         match ask(&h, r#"{"cmd":"get_status"}"#).await {
             Event::Status(s) => {
-                assert_eq!(s.slaps, 42);
+                assert_eq!(s.spanks, 42);
                 assert!(s.warming_up);
                 assert!(!s.enabled);
             }

@@ -58,25 +58,25 @@ const TAKES: &[Take] = &[
         label: "slap-gentle",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid GENTLY 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid GENTLY 10 times, about one every 3 seconds.",
     },
     Take {
         label: "slap-medium",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid at NORMAL strength 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid at NORMAL strength 10 times, about one every 3 seconds.",
     },
     Take {
         label: "slap-hard",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid HARD 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid HARD 10 times, about one every 3 seconds.",
     },
     Take {
         label: "slap-side",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the SIDE / palm rest 10 times, about one every 3 seconds.",
+        prompt: "Spank the SIDE / palm rest 10 times, about one every 3 seconds.",
     },
 ];
 

@@ -16,7 +16,7 @@ import {
 
 applyPreference();
 applyDom();
-import type { Action, DaemonConfig, Slap, Status, Telemetry } from "./types";
+import type { Action, DaemonConfig, Spank, Status, Telemetry } from "./types";
 import * as actions from "./actions";
 import type { ActionId } from "./actions";
 
@@ -377,7 +377,7 @@ function renderStatus(status: Status) {
   $("status-text").textContent = status.enabled ? t("detecting") : t("paused");
 
   facts($("facts"), [
-    [t("spankCount"), String(status.slaps)],
+    [t("spankCount"), String(status.spanks)],
     [
       "State",
       status.warming_up ? "warming up" : status.enabled ? "detecting" : "paused",
@@ -389,7 +389,7 @@ function renderStatus(status: Status) {
     ["Sensor", `${status.rate_hz.toFixed(0)} Hz`],
     ["Gyroscope", status.has_gyro ? "present" : "not found"],
     ["Uptime", `${Math.floor(status.uptime_s / 60)}m ${Math.floor(status.uptime_s % 60)}s`],
-    [t("spankCount"), String(status.slaps)],
+    [t("spankCount"), String(status.spanks)],
     ["Telemetry", `${status.telemetry_subscribers} subscriber(s)`],
   ]);
 }
@@ -613,10 +613,10 @@ listen<Telemetry>("telemetry", (event) => {
 
 listen<Status>("status", (event) => renderStatus(event.payload));
 
-listen<Slap>("slap", (event) => {
-  const slap = event.payload;
-  scope.markSlap(slap.tier);
-  $("last-slap").textContent = t("lastSlap", { tier: slap.tier, g: slap.peak_g.toFixed(2) });
+listen<Spank>("spank", (event) => {
+  const spank = event.payload;
+  scope.markSpank(spank.tier);
+  $("last-spank").textContent = t("lastSpank", { tier: spank.tier, g: spank.peak_g.toFixed(2) });
 });
 
 /** Single place that reflects connection state, so events and polling can't disagree. */

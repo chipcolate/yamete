@@ -74,7 +74,7 @@ export class Scope {
     }
   }
 
-  markSlap(tier: string) {
+  markSpank(tier: string) {
     this.markers.push({ at: this.written, tier });
     // Anything older than the window can never be drawn again.
     const oldest = this.written - this.envelope.length;

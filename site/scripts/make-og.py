@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Generate public/og.png, public/favicon.png, and public/apple-touch-icon.png.
+"""Generate public/og.png and public/favicon.png from the app artwork.
 
 The share card is built from the same pieces as the page — the sampled gradient, the app
 icon, and Zen Maru Gothic for the wordmark — so a link preview looks like the site rather
 than like a screenshot of it.
 
-The tab favicon is the laptop on a transparent canvas. The apple-touch icon keeps the
-squircle tile, because iOS fills transparency with black.
+The tab favicon is the laptop on a transparent canvas.
 
 Regenerate with:  bun run og
 """
@@ -26,7 +25,6 @@ ICON = SITE.parent / "app-icon.png"
 FONTS = SITE / "node_modules/@fontsource"
 OG = SITE / "public/og.png"
 FAVICON = SITE / "public/favicon.png"
-APPLE = SITE / "public/apple-touch-icon.png"
 
 W, H = 1200, 630
 INK = (56, 24, 37)
@@ -234,14 +232,9 @@ def main() -> int:
     OG.parent.mkdir(parents=True, exist_ok=True)
     card.save(OG, optimize=True)
     laptop_mark(icon).save(FAVICON, optimize=True)
-    tile = icon.resize((180, 180), Image.LANCZOS)
-    apple = Image.new("RGB", (180, 180), STOPS[-1])
-    apple.paste(tile, mask=tile)
-    apple.save(APPLE, optimize=True)
 
     print(f"wrote {OG} ({OG.stat().st_size // 1024} KB)")
     print(f"wrote {FAVICON} ({FAVICON.stat().st_size // 1024} KB)")
-    print(f"wrote {APPLE} ({APPLE.stat().st_size // 1024} KB)")
     return 0
 
 

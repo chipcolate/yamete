@@ -21,7 +21,7 @@ fixture corpus.
 bun run extract      # fixtures/*.fixture.gz  → src/data/traces.json
 bun run sensitivity  # replays the corpus     → src/data/sensitivity.json   (needs the binary)
 bun run logotype     # やめて                  → src/assets/yamete-logotype.svg
-bun run og           # app artwork            → public/og.png, public/favicon.png, public/apple-touch-icon.png
+bun run og           # app artwork            → public/og.png, public/favicon.png
 ```
 
 `bun run sensitivity` shells out to the detector, so build it first:

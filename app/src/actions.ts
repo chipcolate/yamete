@@ -1,4 +1,4 @@
-//! The three things a slap can do, and their editors.
+//! The three things a spank can do, and their editors.
 //!
 //! The daemon's model is a free-form list of actions, which is the right shape for a
 //! config file and the wrong shape for a settings panel. The UI presents exactly one of
@@ -60,7 +60,7 @@ function defaultAction(id: ActionId): Action {
     enabled: false,
     tiers: [],
     min_intensity: 0,
-    // 200 ms measured by ear: detection beats the sound of the slap itself.
+    // 200 ms measured by ear: detection beats the sound of the spank itself.
     delay_ms: 200,
     kind: defaultKind(id),
   };

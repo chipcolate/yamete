@@ -4,7 +4,7 @@ version = "0.1.1"
 edition = "2021"
 rust-version = "1.77.2"
 license = "Apache-2.0"
-description = "Menu bar controller for the yamete slap detector"
+description = "Menu bar controller for the yamete spank detector"
 
 # Deliberately detached from the core workspace: building this pulls in the whole Tauri
 # toolchain and needs a built frontend, neither of which should slow down `cargo test`

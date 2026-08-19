@@ -1,7 +1,7 @@
 //! The live scope.
 //!
 //! A rolling view of the high-passed acceleration envelope with the tier bands drawn over
-//! it, so choosing a sensitivity is a matter of looking at where your slaps land relative
+//! it, so choosing a sensitivity is a matter of looking at where your spanks land relative
 //! to the lines rather than guessing at numbers.
 
 import type { Telemetry, Tiers } from "./types";
@@ -12,12 +12,12 @@ const WINDOW_S = 6;
 /** Assumed sample rate for sizing the ring; the exact value only affects history length. */
 const NOMINAL_RATE = 805;
 
-/** Vertical range, in g. Chosen to cover a hard slap with headroom. */
+/** Vertical range, in g. Chosen to cover a hard spank with headroom. */
 const MAX_G = 0.8;
 
 interface Marker {
   /**
-   * Total samples written when the slap landed.
+   * Total samples written when the spank landed.
    *
    * Deliberately not a ring index: once the ring wraps, an old index maps onto a
    * perfectly valid position holding newer data, so markers from minutes ago reappear as
@@ -168,7 +168,7 @@ export class Scope {
     trace(this.gyro, gyroColor, MAX_G / 120, 1);
     trace(this.envelope, line, 1, 1.5);
 
-    // Slap markers, placed by age rather than by ring position.
+    // Spank markers, placed by age rather than by ring position.
     const oldest = this.written - this.filled;
     ctx.textBaseline = "top";
     for (const marker of this.markers) {

@@ -5,12 +5,15 @@ The share card is built from the same pieces as the page — the sampled gradien
 icon, and Zen Maru Gothic for the wordmark — so a link preview looks like the site rather
 than like a screenshot of it.
 
+The tab favicon is the laptop on a transparent canvas.
+
 Regenerate with:  bun run og
 """
 
 import io
 import pathlib
 import sys
+from collections import deque
 
 import numpy as np
 from fontTools.ttLib import TTFont
@@ -64,6 +67,150 @@ def gradient() -> Image.Image:
     return Image.fromarray(out.astype("uint8"), "RGB")
 
 
+def _flood(pix, w: int, h: int, seeds: list[tuple[int, int]], fuzz: int) -> None:
+    """Knock out pixels within `fuzz` of each seed's colour, 4-connected."""
+
+    def close(c, seed) -> bool:
+        return max(abs(c[0] - seed[0]), abs(c[1] - seed[1]), abs(c[2] - seed[2])) <= fuzz
+
+    seen = bytearray(w * h)
+    q: deque[tuple[int, int]] = deque()
+    for x, y in seeds:
+        if not (0 <= x < w and 0 <= y < h):
+            continue
+        r, g, b, a = pix[x, y]
+        if a == 0:
+            continue
+        seed = (r, g, b)
+        q.clear()
+        i = y * w + x
+        if seen[i]:
+            continue
+        seen[i] = 1
+        q.append((x, y))
+        while q:
+            cx, cy = q.popleft()
+            cr, cg, cb, _ = pix[cx, cy]
+            pix[cx, cy] = (cr, cg, cb, 0)
+            for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                if not (0 <= nx < w and 0 <= ny < h):
+                    continue
+                ni = ny * w + nx
+                if seen[ni]:
+                    continue
+                nr, ng, nb, na = pix[nx, ny]
+                if na == 0 or (nr < 90 and ng < 70 and nb < 80):
+                    seen[ni] = 1
+                    continue
+                if close((nr, ng, nb), seed):
+                    seen[ni] = 1
+                    q.append((nx, ny))
+
+
+def laptop_mark(icon: Image.Image, size: int = 256) -> Image.Image:
+    """The cartoon laptop, with the squircle tile and drop shadow knocked out."""
+    im = icon.convert("RGBA")
+    w, h = im.size
+    pix = im.load()
+    _flood(
+        pix,
+        w,
+        h,
+        [
+            (200, 200),
+            (512, 200),
+            (800, 200),
+            (200, 400),
+            (800, 400),
+            (200, 600),
+            (800, 650),
+            (200, 800),
+            (512, 920),
+            (800, 800),
+            (150, 300),
+            (870, 300),
+            (150, 500),
+            (870, 500),
+            (300, 180),
+            (700, 180),
+            (400, 160),
+            (600, 160),
+            (250, 850),
+            (750, 850),
+            (400, 880),
+            (624, 880),
+        ],
+        fuzz=32,
+    )
+    # Peach oval under the chassis is the tile's drop shadow, not the drawing.
+    _flood(
+        pix,
+        w,
+        h,
+        [
+            (300, 790),
+            (400, 800),
+            (512, 810),
+            (650, 800),
+            (750, 790),
+            (250, 760),
+            (780, 760),
+            (350, 820),
+            (600, 820),
+        ],
+        fuzz=28,
+    )
+
+    label = [-1] * (w * h)
+    sizes: list[int] = []
+    for y in range(h):
+        for x in range(w):
+            i = y * w + x
+            if pix[x, y][3] == 0 or label[i] >= 0:
+                continue
+            cid = len(sizes)
+            n = 0
+            q: deque[tuple[int, int]] = deque([(x, y)])
+            label[i] = cid
+            while q:
+                cx, cy = q.popleft()
+                n += 1
+                for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                    if not (0 <= nx < w and 0 <= ny < h):
+                        continue
+                    ni = ny * w + nx
+                    if pix[nx, ny][3] == 0 or label[ni] >= 0:
+                        continue
+                    label[ni] = cid
+                    q.append((nx, ny))
+            sizes.append(n)
+    keep = max(range(len(sizes)), key=lambda i: sizes[i])
+    minx, miny, maxx, maxy = w, h, 0, 0
+    for y in range(h):
+        for x in range(w):
+            i = y * w + x
+            if pix[x, y][3] == 0:
+                continue
+            if label[i] != keep:
+                pix[x, y] = (0, 0, 0, 0)
+                continue
+            minx = min(minx, x)
+            miny = min(miny, y)
+            maxx = max(maxx, x)
+            maxy = max(maxy, y)
+
+    pad = int(0.07 * max(maxx - minx + 1, maxy - miny + 1))
+    minx = max(0, minx - pad)
+    miny = max(0, miny - pad)
+    maxx = min(w - 1, maxx + pad)
+    maxy = min(h - 1, maxy + pad)
+    cropped = im.crop((minx, miny, maxx + 1, maxy + 1))
+    side = max(cropped.size)
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(cropped, ((side - cropped.size[0]) // 2, (side - cropped.size[1]) // 2), cropped)
+    return canvas.resize((size, size), Image.LANCZOS)
+
+
 def main() -> int:
     card = gradient()
     icon = Image.open(ICON).convert("RGBA")
@@ -84,7 +231,7 @@ def main() -> int:
 
     OG.parent.mkdir(parents=True, exist_ok=True)
     card.save(OG, optimize=True)
-    icon.resize((256, 256), Image.LANCZOS).save(FAVICON, optimize=True)
+    laptop_mark(icon).save(FAVICON, optimize=True)
 
     print(f"wrote {OG} ({OG.stat().st_size // 1024} KB)")
     print(f"wrote {FAVICON} ({FAVICON.stat().st_size // 1024} KB)")

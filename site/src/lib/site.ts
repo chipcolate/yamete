@@ -7,7 +7,7 @@ export const DOWNLOAD = `${REPO}/releases/latest`;
 export const CHECKSUMS = `${REPO}/releases/latest/download/SHA256SUMS`;
 
 export const SITE = {
-  title: "yamete — slap detection for Apple Silicon MacBooks",
+  title: "yamete — spank your MacBook",
   description:
-    "Hit the laptop, it makes a noise. A menu bar app that reads the undocumented motion sensor in Apple Silicon MacBooks at 805 Hz and tells a slap from a desk bump.",
+    "A free menu bar app for Apple Silicon MacBooks. Spank the lid to play a sound, call a webhook, or run a command. Typing, trackpad clicks, and knocks on the desk stay quiet.",
 };

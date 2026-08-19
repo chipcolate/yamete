@@ -245,7 +245,7 @@ function verify(traces) {
 const traces = [
   build("slap-hard", {
     id: "slap",
-    title: "Slap the lid",
+    title: "Spank the lid",
     verdict: "fires",
     note: "Striking the lid torques it about the hinge.",
     at: null,

@@ -85,38 +85,26 @@ const NAV = [
           <div class="legend mono">
             <span class="lg lg--a">{s.acceleration}</span>
             <span class="lg lg--g">{s.rotation}</span>
-            <span class="lg lg--t">severity bands</span>
+            <span class="lg lg--t">{s.severityBands}</span>
           </div>
         </div>
 
         <div class="row">
-          <span class="mono rk">Sensitivity</span>
+          <span class="mono rk">{s.sensitivityLabel}</span>
           <span class="track"><i style="left:50%"></i></span>
           <span class="mono rv">0.50</span>
         </div>
         <div class="row">
-          <span class="mono rk">Cooldown</span>
+          <span class="mono rk">{s.cooldownLabel}</span>
           <span class="track"><i style="left:23%"></i></span>
           <span class="mono rv">0.75 s</span>
         </div>
       </div>
 
       <div class="prose">
-        <p>
-          The window follows the system appearance rather than picking a look. A menu bar
-          utility that ignores light and dark reads as broken rather than styled.
-        </p>
-        <p>
-          It ships the daemon inside itself and owns its lifetime, so there is nothing to
-          install separately and nothing left running when you quit. If a daemon is already
-          running the app attaches to it and leaves it alone.
-        </p>
-        <p>
-          You can also skip the app. The daemon runs on its own as a user LaunchAgent, and
-          the protocol is newline-delimited JSON — you can drive it by hand with <code
-            >nc -U</code
-          >.
-        </p>
+        <p>{s.followSystem}</p>
+        <p>{s.bundled}</p>
+        <p>{s.skipApp}</p>
       </div>
     </div>
   </div>

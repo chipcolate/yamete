@@ -76,6 +76,9 @@ export type Strings = {
     eyebrow: string;
     heading: string;
     lede: string;
+    followSystem: string;
+    bundled: string;
+    skipApp: string;
     navMonitor: string;
     navDetection: string;
     navActions: string;
@@ -83,6 +86,9 @@ export type Strings = {
     pause: string;
     acceleration: string;
     rotation: string;
+    severityBands: string;
+    sensitivityLabel: string;
+    cooldownLabel: string;
   };
   privacySection: {
     eyebrow: string;

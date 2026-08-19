@@ -1,4 +1,4 @@
-//! Daemon configuration: what counts as a slap, and what happens when one lands.
+//! Daemon configuration: what counts as a spank, and what happens when one lands.
 //!
 //! The action model is deliberately open-ended. Sounds accept any file the decoder
 //! understands rather than a fixed set of bundled clips, webhooks are fully templated, and
@@ -124,7 +124,7 @@ pub enum SoundOrder {
     Random,
 }
 
-/// One thing that happens when a slap is detected.
+/// One thing that happens when a spank is detected.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Action {
@@ -138,9 +138,9 @@ pub struct Action {
     /// Skip the action below this intensity, 0.0 to 1.0.
     pub min_intensity: f32,
 
-    /// Hold the action back by this many milliseconds after the slap.
+    /// Hold the action back by this many milliseconds after the spank.
     ///
-    /// Detection is fast enough that a sound starts while the physical slap is still
+    /// Detection is fast enough that a sound starts while the physical spank is still
     /// audible and gets partly masked by it — the response wants to land *after* the
     /// impact, not on top of it. 200 ms was chosen by ear. It lives on the action rather
     /// than on the sound because the same reasoning applies to a webhook that drives a
@@ -215,7 +215,7 @@ impl Action {
         }
         if self.delay_ms > 5_000 {
             return Err(format!(
-                "action `{}`: delay_ms of {} is longer than any response to a slap should wait",
+                "action `{}`: delay_ms of {} is longer than any response to a spank should wait",
                 self.id, self.delay_ms
             ));
         }
@@ -310,7 +310,7 @@ pub enum ActionKind {
         /// which is what people expect a sound to do.
         volume_db: f32,
 
-        /// Vary the volume with how hard the slap was.
+        /// Vary the volume with how hard the spank was.
         ///
         /// Off by default. Scaling volume by force sounds like a good idea and mostly
         /// isn't: it makes the app quieter than the system volume you chose, for reasons
@@ -321,7 +321,7 @@ pub enum ActionKind {
 
         /// How far the volume swings either side of the base, as a percentage.
         ///
-        /// Symmetric on purpose: a mid-strength slap plays at exactly the configured
+        /// Symmetric on purpose: a mid-strength spank plays at exactly the configured
         /// volume, a gentle one that much quieter and a hard one that much louder. Only
         /// used when `scale_with_intensity` is on.
         #[serde(default = "default_intensity_range")]
@@ -332,7 +332,7 @@ pub enum ActionKind {
 
     /// Run a program.
     ///
-    /// The slap is delivered twice over: as `YAMETE_*` environment variables for shell
+    /// The spank is delivered twice over: as `YAMETE_*` environment variables for shell
     /// one-liners, and as a JSON object on stdin for anything that wants the full event.
     /// That second path is what makes an external script — a Bun/TS program, say — a
     /// first-class action without the daemon needing to know anything about it.
@@ -340,7 +340,7 @@ pub enum ActionKind {
         program: String,
         #[serde(default)]
         args: Vec<String>,
-        /// Send the slap JSON on stdin.
+        /// Send the spank JSON on stdin.
         #[serde(default = "yes")]
         stdin_json: bool,
     },
@@ -355,7 +355,7 @@ pub enum ActionKind {
         method: String,
         #[serde(default)]
         headers: BTreeMap<String, String>,
-        /// Defaults to the slap event as JSON when omitted.
+        /// Defaults to the spank event as JSON when omitted.
         #[serde(default)]
         body: Option<String>,
         #[serde(default = "default_timeout")]
@@ -475,7 +475,7 @@ mod tests {
     }
 
     #[test]
-    fn min_intensity_gates_quiet_slaps() {
+    fn min_intensity_gates_quiet_spanks() {
         let a = Action {
             min_intensity: 0.6,
             ..Action::default_sound()
@@ -674,8 +674,8 @@ mod tests {
     fn templates_substitute_known_keys() {
         assert_eq!(render("{{tier}}", &vars()), "major");
         assert_eq!(
-            render("a {{tier}} slap at {{intensity}}!", &vars()),
-            "a major slap at 0.83!"
+            render("a {{tier}} spank at {{intensity}}!", &vars()),
+            "a major spank at 0.83!"
         );
         // Whitespace inside the braces is tolerated.
         assert_eq!(render("{{ tier }}", &vars()), "major");

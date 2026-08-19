@@ -16,7 +16,7 @@ import {
 
 applyPreference();
 applyDom();
-import type { Action, DaemonConfig, Slap, Status, Telemetry } from "./types";
+import type { Action, DaemonConfig, Spank, Status, Telemetry } from "./types";
 import * as actions from "./actions";
 import type { ActionId } from "./actions";
 
@@ -293,8 +293,8 @@ function renderActionPages() {
     $("volume-range-out").textContent = `± ${sound.kind.intensity_range_pct.toFixed(0)}%`;
     $("range-wrap").hidden = !sound.kind.scale_with_intensity;
     $("scale-hint").textContent = sound.kind.scale_with_intensity
-      ? "A mid-strength slap plays at your system volume; gentler is quieter, harder is louder."
-      : "Off: sounds play at your system volume.";
+      ? t("scaleOn")
+      : t("scaleOff");
   }
 
   // Webhook
@@ -377,7 +377,7 @@ function renderStatus(status: Status) {
   $("status-text").textContent = status.enabled ? t("detecting") : t("paused");
 
   facts($("facts"), [
-    ["Slaps", String(status.slaps)],
+    [t("spankCount"), String(status.spanks)],
     [
       "State",
       status.warming_up ? "warming up" : status.enabled ? "detecting" : "paused",
@@ -389,7 +389,7 @@ function renderStatus(status: Status) {
     ["Sensor", `${status.rate_hz.toFixed(0)} Hz`],
     ["Gyroscope", status.has_gyro ? "present" : "not found"],
     ["Uptime", `${Math.floor(status.uptime_s / 60)}m ${Math.floor(status.uptime_s % 60)}s`],
-    ["Slaps", String(status.slaps)],
+    [t("spankCount"), String(status.spanks)],
     ["Telemetry", `${status.telemetry_subscribers} subscriber(s)`],
   ]);
 }
@@ -563,7 +563,7 @@ $("webhook-headers").addEventListener("input", (e) =>
 $("webhook-body").addEventListener("input", (e) =>
   editWebhook((k) => {
     const text = (e.target as HTMLTextAreaElement).value;
-    // Empty means "send the slap as JSON", which is not the same as sending nothing.
+    // Empty means "send the spank as JSON", which is not the same as sending nothing.
     k.body = text.trim() === "" ? null : text;
   }),
 );
@@ -613,10 +613,10 @@ listen<Telemetry>("telemetry", (event) => {
 
 listen<Status>("status", (event) => renderStatus(event.payload));
 
-listen<Slap>("slap", (event) => {
-  const slap = event.payload;
-  scope.markSlap(slap.tier);
-  $("last-slap").textContent = t("lastSlap", { tier: slap.tier, g: slap.peak_g.toFixed(2) });
+listen<Spank>("spank", (event) => {
+  const spank = event.payload;
+  scope.markSpank(spank.tier);
+  $("last-spank").textContent = t("lastSpank", { tier: spank.tier, g: spank.peak_g.toFixed(2) });
 });
 
 /** Single place that reflects connection state, so events and polling can't disagree. */

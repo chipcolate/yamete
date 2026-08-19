@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 use tokio::sync::{broadcast, mpsc, watch};
 use yamete_dsp::Detector;
-use yamete_proto::{DaemonConfig, Event, Slap, Status, Telemetry};
+use yamete_proto::{DaemonConfig, Event, Spank, Status, Telemetry};
 use yamete_sensor::Imu;
 
 use crate::actions::Executor;
@@ -57,7 +57,7 @@ pub fn run(foreground: bool, exit_with_parent: bool) -> Result<(), Error> {
         version: env!("CARGO_PKG_VERSION").into(),
         has_gyro: false,
         uptime_s: 0.0,
-        slaps: 0,
+        spanks: 0,
         rate_hz: 0.0,
         warming_up: true,
         telemetry_subscribers: 0,
@@ -189,7 +189,7 @@ fn detector_loop(
     }
 
     let started = Instant::now();
-    let mut slaps = 0u64;
+    let mut spanks = 0u64;
     let mut last_telemetry = Instant::now();
     let mut envelope = Vec::with_capacity(MAX_TELEMETRY_SAMPLES);
     let mut gyro_trace = Vec::with_capacity(MAX_TELEMETRY_SAMPLES);
@@ -199,7 +199,7 @@ fn detector_loop(
 
     loop {
         if shutdown.load(Ordering::Relaxed) {
-            tracing::info!(slaps, "detector stopped");
+            tracing::info!(spanks, "detector stopped");
             return Ok(());
         }
 
@@ -237,7 +237,7 @@ fn detector_loop(
 
         while let Ok((id, intensity)) = test_rx.try_recv() {
             if let Some(action) = config.action(&id).cloned() {
-                executor.run(&action, &preview_slap(intensity));
+                executor.run(&action, &preview_spank(intensity));
             }
         }
 
@@ -261,20 +261,20 @@ fn detector_loop(
                     // Still fed to the detector while disabled, so its background estimate
                     // stays current and re-enabling doesn't need another warmup.
                     if let (Some(detection), true) = (detection, enabled) {
-                        let slap = Slap::from(detection);
-                        slaps += 1;
-                        executor.dispatch(&config, &slap);
-                        let _ = events.send(Event::Slap(slap));
+                        let spank = Spank::from(detection);
+                        spanks += 1;
+                        executor.dispatch(&config, &spank);
+                        let _ = events.send(Event::Spank(spank));
                         if foreground {
                             println!(
                                 "{:>5}  t={:8.3}s  {:6}  peak {:.4} g  intensity {:.2}  votes {}/5  gyro {:.0} deg/s",
-                                slaps,
-                                slap.t,
-                                slap.tier.as_str(),
-                                slap.peak_g,
-                                slap.intensity,
-                                slap.votes,
-                                slap.gyro_peak,
+                                spanks,
+                                spank.t,
+                                spank.tier.as_str(),
+                                spank.peak_g,
+                                spank.intensity,
+                                spank.votes,
+                                spank.gyro_peak,
                             );
                         }
                     }
@@ -304,7 +304,7 @@ fn detector_loop(
                 version: version.to_string(),
                 has_gyro: imu.has_gyro(),
                 uptime_s: started.elapsed().as_secs_f64(),
-                slaps,
+                spanks,
                 rate_hz: measured_rate(&imu, started),
                 warming_up: detector.is_warming_up(),
                 telemetry_subscribers: telemetry_subscribers.load(Ordering::Relaxed),
@@ -325,9 +325,9 @@ fn measured_rate(imu: &Imu, started: Instant) -> f32 {
     imu.accel_stats().received.load(Ordering::Relaxed) as f32 / elapsed
 }
 
-/// A synthetic slap for previewing an action from the UI.
-fn preview_slap(intensity: f32) -> Slap {
-    Slap {
+/// A synthetic spank for previewing an action from the UI.
+fn preview_spank(intensity: f32) -> Spank {
+    Spank {
         t: 0.0,
         tier: yamete_dsp::Tier::Major,
         peak_g: 0.25,
@@ -345,10 +345,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn preview_slap_is_clamped_and_plausible() {
-        assert_eq!(preview_slap(5.0).intensity, 1.0);
-        assert_eq!(preview_slap(-1.0).intensity, 0.0);
-        let s = preview_slap(0.5);
+    fn preview_spank_is_clamped_and_plausible() {
+        assert_eq!(preview_spank(5.0).intensity, 1.0);
+        assert_eq!(preview_spank(-1.0).intensity, 0.0);
+        let s = preview_spank(0.5);
         assert_eq!(s.intensity, 0.5);
         // Must satisfy every action filter a user could reasonably set, or "Test" in the
         // UI would silently do nothing for tier-restricted actions.

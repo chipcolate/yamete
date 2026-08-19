@@ -15,7 +15,7 @@
 //! for the two ownership paths.
 //!
 //! Two channels run over the one socket: request/reply for config and status, and a
-//! subscription stream for slaps and telemetry. Telemetry is only requested while a window
+//! subscription stream for spanks and telemetry. Telemetry is only requested while a window
 //! is actually visible, because it is the only thing that costs the daemon anything.
 
 use std::io::{BufRead, BufReader, Write};
@@ -160,7 +160,7 @@ fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), Strin
     write_half
         .write_all(
             yamete_proto::to_line(&Request::Subscribe {
-                slaps: true,
+                spanks: true,
                 telemetry: subscribed_telemetry,
             })
             .as_bytes(),
@@ -178,7 +178,7 @@ fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), Strin
     // mid-frame with bytes already consumed from the socket. Clearing the buffer at the
     // top of the loop would throw those away and leave the rest of the frame to be parsed
     // as a truncated line — which silently shredded exactly the large, frequent telemetry
-    // frames while letting small, rare slap events through.
+    // frames while letting small, rare spank events through.
     let mut line = String::new();
 
     loop {
@@ -188,7 +188,7 @@ fn connect_and_stream(app: &AppHandle, daemon: &Arc<Daemon>) -> Result<(), Strin
             write_half
                 .write_all(
                     yamete_proto::to_line(&Request::Subscribe {
-                        slaps: true,
+                        spanks: true,
                         telemetry: wanted,
                     })
                     .as_bytes(),
@@ -220,7 +220,7 @@ fn is_timeout(e: &std::io::Error) -> bool {
 
 fn forward(app: &AppHandle, event: Event) {
     let _ = match event {
-        Event::Slap(slap) => app.emit("slap", slap),
+        Event::Spank(spank) => app.emit("spank", spank),
         Event::Telemetry(t) => app.emit("telemetry", t),
         Event::Config { config } => app.emit("config", config),
         Event::Status(s) => app.emit("status", s),

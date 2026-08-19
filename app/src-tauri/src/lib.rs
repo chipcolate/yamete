@@ -1,8 +1,8 @@
-//! Yamete — a menu bar controller for the slap detector.
+//! Yamete — a menu bar controller for the spank detector.
 //!
 //! Deliberately thin. The daemon does the work and keeps running whether or not this is
 //! open; the app exists to show you what the detector is seeing and to change its mind
-//! about what counts as a slap.
+//! about what counts as a spank.
 
 mod daemon;
 mod single_instance;

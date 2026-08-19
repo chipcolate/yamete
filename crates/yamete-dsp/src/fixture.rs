@@ -9,7 +9,7 @@
 //!
 //! ```text
 //! # yamete-fixture v1
-//! # label=slap-lid-left
+//! # label=spank-lid-left
 //! # expect=5
 //! # model=Mac16,5
 //! s,t,x,y,z
@@ -37,7 +37,7 @@ const GZIP_MAGIC: [u8; 2] = [0x1f, 0x8b];
 /// A recorded trace of both sensors.
 #[derive(Debug, Clone, Default)]
 pub struct Fixture {
-    /// Short name describing what was recorded, e.g. `slap-lid-left` or `typing`.
+    /// Short name describing what was recorded, e.g. `spank-lid-left` or `typing`.
     pub label: String,
     /// How many slaps the recording is supposed to contain. `None` means unannotated.
     pub expect: Option<usize>,
@@ -254,7 +254,7 @@ mod tests {
     use super::*;
 
     fn sample_fixture() -> Fixture {
-        let mut fx = Fixture::new("slap-lid-left");
+        let mut fx = Fixture::new("spank-lid-left");
         fx.expect = Some(3);
         fx.meta.insert("model".into(), "Mac16,5".into());
         fx.accel = vec![
@@ -285,7 +285,7 @@ mod tests {
         let fx = sample_fixture();
         let parsed = Fixture::from_text(&fx.to_text()).unwrap();
 
-        assert_eq!(parsed.label, "slap-lid-left");
+        assert_eq!(parsed.label, "spank-lid-left");
         assert_eq!(parsed.expect, Some(3));
         assert_eq!(
             parsed.meta.get("model").map(String::as_str),

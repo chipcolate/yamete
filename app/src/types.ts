@@ -9,7 +9,7 @@ export type Tier = "micro" | "medium" | "major";
 
 export type GyroMode = "off" | "annotate" | "require";
 
-export interface Slap {
+export interface Spank {
   t: number;
   tier: Tier;
   peak_g: number;
@@ -46,7 +46,7 @@ export interface Status {
   version: string;
   has_gyro: boolean;
   uptime_s: number;
-  slaps: number;
+  spanks: number;
   rate_hz: number;
   warming_up: boolean;
   telemetry_subscribers: number;

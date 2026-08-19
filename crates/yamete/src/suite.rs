@@ -55,28 +55,28 @@ const TAKES: &[Take] = &[
         prompt: "Adjust the screen angle, plug/unplug a cable, nudge the laptop's position.",
     },
     Take {
-        label: "slap-gentle",
+        label: "spank-gentle",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid GENTLY 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid GENTLY 10 times, about one every 3 seconds.",
     },
     Take {
-        label: "slap-medium",
+        label: "spank-medium",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid at NORMAL strength 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid at NORMAL strength 10 times, about one every 3 seconds.",
     },
     Take {
-        label: "slap-hard",
+        label: "spank-hard",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the lid HARD 10 times, about one every 3 seconds.",
+        prompt: "Spank the lid HARD 10 times, about one every 3 seconds.",
     },
     Take {
-        label: "slap-side",
+        label: "spank-side",
         secs: 30.0,
         expect: 10,
-        prompt: "Slap the SIDE / palm rest 10 times, about one every 3 seconds.",
+        prompt: "Spank the SIDE / palm rest 10 times, about one every 3 seconds.",
     },
 ];
 

@@ -15,17 +15,17 @@ const { lang } = Astro.props;
 const s = getStrings(lang).slapTest;
 
 const traces = data.traces as Trace[];
-const shown = ["slap", "desk-bump"].map((id) => traces.find((t) => t.id === id)!);
-const slap = shown.find((t) => t.id === "slap")!;
+const shown = ["spank", "desk-bump"].map((id) => traces.find((t) => t.id === id)!);
+const spank = shown.find((t) => t.id === "spank")!;
 const desk = shown.find((t) => t.id === "desk-bump")!;
-const deskLargerByPct = Math.round((desk.peak_g / slap.peak_g - 1) * 100);
+const deskLargerByPct = Math.round((desk.peak_g / spank.peak_g - 1) * 100);
 
 const verdictLabel = (v: string) => (v === "fires" ? s.fires : s.ignored);
 ---
 
 <div class="slaptest">
   <div class="controls" role="group" aria-label={s.ariaReplay}>
-    <button type="button" class="tap" data-play="slap" aria-pressed="true">{s.slapLid}</button>
+    <button type="button" class="tap" data-play="spank" aria-pressed="true">{s.slapLid}</button>
     <button type="button" class="tap" data-play="desk-bump" aria-pressed="false">
       {s.bumpDesk}
     </button>
@@ -34,7 +34,7 @@ const verdictLabel = (v: string) => (v === "fires" ? s.fires : s.ignored);
   <figure class="scope card">
     {
       shown.map((t) => (
-        <div class="trace" data-trace={t.id} hidden={t.id !== "slap"}>
+        <div class="trace" data-trace={t.id} hidden={t.id !== "spank"}>
           <div class="panel">
             <div class="panel__head">
               <span class="mono key">{s.acceleration}</span>
@@ -97,7 +97,7 @@ const verdictLabel = (v: string) => (v === "fires" ? s.fires : s.ignored);
     <figcaption class="readout" aria-live="polite">
       {
         shown.map((t) => (
-          <p class="verdict" data-verdict={t.id} hidden={t.id !== "slap"}>
+          <p class="verdict" data-verdict={t.id} hidden={t.id !== "spank"}>
             <span class="mono num">{t.peak_g.toFixed(2)} g</span>
             <span class="mono num num--gyro">{t.gyro_peak.toFixed(1)} °/s</span>
             <span class={`chip chip--${t.verdict}`}>{verdictLabel(t.verdict)}</span>
@@ -343,7 +343,7 @@ const verdictLabel = (v: string) => (v === "fires" ? s.fires : s.ignored);
         laptop.removeAttribute("data-hit");
         laptop.removeAttribute("data-nudge");
         void laptop.getBoundingClientRect();
-        laptop.setAttribute(id === "slap" ? "data-hit" : "data-nudge", "");
+        laptop.setAttribute(id === "spank" ? "data-hit" : "data-nudge", "");
       }
     };
 

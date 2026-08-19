@@ -162,13 +162,13 @@ function build(name, { id, title, at, verdict, note }) {
  *
  * Refresh after changing filters.rs or the fixtures:
  *   cargo build --release
- *   for f in slap-hard desk-bump typing trackpad; do
+ *   for f in spank-hard desk-bump typing trackpad; do
  *     ./target/release/yamete analyze fixtures/$f.fixture.gz | grep envelope
  *   done
  * then paste the `max` column here and re-run `bun run extract`.
  */
 const ENVELOPE_MAX_G = {
-  "slap-hard": 0.52231,
+  "spank-hard": 0.52231,
   "desk-bump": 0.7285,
   typing: 0.03246,
   trackpad: 0.09271,
@@ -237,15 +237,15 @@ function verify(traces) {
   }
 }
 
-// Each trace is centred on the loudest moment of its recording — for the slap that is the
+// Each trace is centred on the loudest moment of its recording — for the spank that is the
 // impact itself, ~25 ms after the detector actually fires. The detector deliberately fires
 // on the leading edge (a 6 ms peak-hold) rather than waiting for the maximum, so the
 // number it reports for an event is smaller than the peak you can see here. The chart
 // shows the impact; `votes` and the verdict are what the detector made of it.
 const traces = [
-  build("slap-hard", {
-    id: "slap",
-    title: "Slap the lid",
+  build("spank-hard", {
+    id: "spank",
+    title: "Spank the lid",
     verdict: "fires",
     note: "Striking the lid torques it about the hinge.",
     at: null,

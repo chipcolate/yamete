@@ -3,7 +3,7 @@
 //! The protocol is newline-delimited JSON over a unix domain socket: one object per line,
 //! bidirectional, no framing beyond the newline. That choice is deliberate — it means the
 //! daemon can be driven and debugged with `nc -U` and a keyboard, which matters a lot for
-//! something whose failure mode is "it silently stopped noticing slaps".
+//! something whose failure mode is "it silently stopped noticing spanks".
 
 use std::path::PathBuf;
 
@@ -55,11 +55,11 @@ pub enum Request {
     /// subscriber it never allocates or serialises a frame.
     Subscribe {
         #[serde(default)]
-        slaps: bool,
+        spanks: bool,
         #[serde(default)]
         telemetry: bool,
     },
-    /// Run one action as if a slap had been detected, for previewing it in the UI.
+    /// Run one action as if a spank had been detected, for previewing it in the UI.
     TestAction {
         id: String,
         #[serde(default = "half")]
@@ -82,8 +82,8 @@ pub enum Event {
         config: Box<DaemonConfig>,
     },
     Status(Status),
-    /// A slap was detected.
-    Slap(Slap),
+    /// A spank was detected.
+    Spank(Spank),
     /// A batch of decimated samples and detector scores, for the live scope.
     Telemetry(Telemetry),
     Error {
@@ -91,9 +91,9 @@ pub enum Event {
     },
 }
 
-/// A detected slap, as reported to clients.
+/// A detected spank, as reported to clients.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Slap {
+pub struct Spank {
     /// Seconds since the daemon started streaming.
     pub t: f64,
     pub tier: yamete_dsp::Tier,
@@ -106,9 +106,9 @@ pub struct Slap {
     pub axis: [f32; 3],
 }
 
-impl From<yamete_dsp::Detection> for Slap {
+impl From<yamete_dsp::Detection> for Spank {
     fn from(d: yamete_dsp::Detection) -> Self {
-        Slap {
+        Spank {
             t: d.t,
             tier: d.tier,
             peak_g: d.peak_g,
@@ -145,8 +145,8 @@ pub struct Status {
     pub has_gyro: bool,
     /// Seconds the daemon has been running.
     pub uptime_s: f64,
-    /// Slaps detected since start.
-    pub slaps: u64,
+    /// Spanks detected since start.
+    pub spanks: u64,
     /// Measured accelerometer sample rate.
     pub rate_hz: f32,
     /// Still building the background estimate.
@@ -251,7 +251,7 @@ mod tests {
             Request::GetConfig,
             Request::SetEnabled { value: false },
             Request::Subscribe {
-                slaps: true,
+                spanks: true,
                 telemetry: false,
             },
             Request::TestAction {
@@ -272,7 +272,7 @@ mod tests {
         // A bare `{"cmd":"subscribe"}` must not silently enable the expensive stream.
         let r: Request = serde_json::from_str(r#"{"cmd":"subscribe"}"#).unwrap();
         match r {
-            Request::Subscribe { slaps, telemetry } => assert!(!slaps && !telemetry),
+            Request::Subscribe { spanks, telemetry } => assert!(!spanks && !telemetry),
             _ => panic!("wrong variant"),
         }
     }
@@ -298,8 +298,8 @@ mod tests {
     }
 
     #[test]
-    fn slap_serialises_flat_for_easy_consumption() {
-        let slap = Slap {
+    fn spank_serialises_flat_for_easy_consumption() {
+        let spank = Spank {
             t: 1.5,
             tier: yamete_dsp::Tier::Major,
             peak_g: 0.3,
@@ -310,8 +310,8 @@ mod tests {
             gyro_ratio: 500.0,
             axis: [0.0, 0.0, 1.0],
         };
-        let line = to_line(&Event::Slap(slap));
-        assert!(line.contains(r#""event":"slap""#));
+        let line = to_line(&Event::Spank(spank));
+        assert!(line.contains(r#""event":"spank""#));
         assert!(line.contains(r#""tier":"major""#));
         assert!(line.contains(r#""intensity":0.8"#));
     }

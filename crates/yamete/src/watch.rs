@@ -50,7 +50,7 @@ pub fn run(sensitivity: f32, show_scores: bool) -> Result<(), Error> {
 
         if !warmed && !detector.is_warming_up() {
             warmed = true;
-            println!("Warmed up — go ahead and slap it.");
+            println!("Warmed up — go ahead and spank it.");
         }
 
         // A live score readout makes threshold tuning tractable; without it you're

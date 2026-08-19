@@ -23,7 +23,7 @@ use clap::{Parser, Subcommand};
 #[command(
     name = "yamete",
     version,
-    about = "Slap detection for Apple Silicon MacBooks"
+    about = "Spank detection for Apple Silicon MacBooks"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -75,7 +75,7 @@ enum Command {
         state: String,
     },
 
-    /// Stream slaps from the running daemon.
+    /// Stream spanks from the running daemon.
     Listen {
         /// Emit raw NDJSON instead of a human-readable table.
         #[arg(long)]
@@ -109,7 +109,7 @@ enum Command {
 
     /// Record a raw sensor trace to a fixture file for offline tuning.
     Calibrate {
-        /// Short name for what is being recorded, e.g. `slap-lid-left` or `typing`.
+        /// Short name for what is being recorded, e.g. `spank-lid-left` or `typing`.
         #[arg(long)]
         label: String,
         /// Recording length, in seconds.

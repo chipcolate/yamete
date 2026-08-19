@@ -47,7 +47,7 @@
           <div class="legend">
             <span><i class="swatch accel"></i><span data-i18n="acceleration">acceleration</span></span>
             <span><i class="swatch gyro"></i><span data-i18n="rotation">rotation</span></span>
-            <span id="last-slap" class="last-slap"></span>
+            <span id="last-spank" class="last-spank"></span>
           </div>
           <div class="legend">
             <span class="legend-title" data-i18n="detected">detected:</span>
@@ -58,7 +58,7 @@
           <dl class="facts" id="facts"></dl>
           <p class="hint" data-i18n="monitorHint">
             Dashed horizontal lines are the severity bands; vertical lines mark a
-            detection. Slap the machine and watch where the spike lands relative to the
+            detection. Spank the machine and watch where the spike lands relative to the
             bands — that is what the sensitivity slider moves.
           </p>
         </section>
@@ -78,7 +78,7 @@
           </label>
           <input id="cooldown" type="range" min="0.1" max="3" step="0.05" value="0.75" />
           <p class="hint" data-i18n="cooldownHint">
-            Minimum gap between detections. One slap rings the chassis for a while; this
+            Minimum gap between detections. One spank rings the chassis for a while; this
             keeps that from counting twice.
           </p>
 
@@ -92,10 +92,10 @@
           </p>
         </section>
 
-        <!-- Actions: what happens when a slap lands -->
+        <!-- Actions: what happens when a spank lands -->
         <section class="page" data-page="actions">
           <p class="hint top" data-i18n="actionsIntro">
-            Turn on what a slap should do. Each one you enable gets its own section in the
+            Turn on what a spank should do. Each one you enable gets its own section in the
             sidebar.
           </p>
 
@@ -118,7 +118,7 @@
             <span data-i18n="advanced">Advanced</span>
           </label>
           <p class="hint" data-i18n="advancedHint">
-            Unlocks running an arbitrary command on every slap. It receives the event as
+            Unlocks running an arbitrary command on every spank. It receives the event as
             JSON on stdin and as YAMETE_* environment variables, so it can do
             anything you can script — which is also why it is behind this switch.
           </p>
@@ -139,7 +139,7 @@
           </div>
 
           <div id="order-wrap" hidden>
-            <label class="field-label" for="sound-order" data-i18n="whenSlap">When a slap lands</label>
+            <label class="field-label" for="sound-order" data-i18n="whenSpank">When a spank lands</label>
             <select id="sound-order">
               <option value="sequential" data-i18n="playInOrder">Play them in order</option>
               <option value="random" data-i18n="pickRandom">Pick one at random</option>
@@ -192,7 +192,7 @@
           <textarea
             id="webhook-body"
             rows="3"
-            placeholder="Leave empty to send the slap as JSON" data-i18n-placeholder="bodyPlaceholder"
+            placeholder="Leave empty to send the spank as JSON" data-i18n-placeholder="bodyPlaceholder"
           ></textarea>
           <p class="hint" data-i18n="webhookHint">
             URL, headers and body accept template fields.
@@ -221,7 +221,7 @@
 
           <label class="row checkbox">
             <input id="exec-stdin" type="checkbox" />
-            <span data-i18n="sendJsonStdin">Send the slap as JSON on stdin</span>
+            <span data-i18n="sendJsonStdin">Send the spank as JSON on stdin</span>
           </label>
           <p class="hint" data-i18n="execHint">
             Arguments accept the same placeholders. The event is also in the environment.

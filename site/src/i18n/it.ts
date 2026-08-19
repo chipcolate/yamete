@@ -128,7 +128,7 @@ export const it: Strings = {
       },
       eightySix: {
         title: "Eighty-Six",
-        body: "Prenotazioni ristorante senza commissioni, su pagine che sembrano le tue. I dati degli ospiti restano tuoi.",
+        body: "Il tuo brand viene prima. Un sistema operativo per ristoranti: menu digitali, prenotazioni senza commissioni, pagine white-label per gli ospiti e dati degli ospiti che restano tuoi.",
       },
       chipcolate: {
         title: "Chipcolate",

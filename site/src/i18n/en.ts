@@ -128,7 +128,7 @@ export const en: Strings = {
       },
       eightySix: {
         title: "Eighty-Six",
-        body: "Restaurant bookings without the commission, on pages that look like yours. Guest data stays yours.",
+        body: "Your brand comes first. A restaurant operating system: digital menus, commission-free bookings, white-label guest pages, and guest data that stays yours.",
       },
       chipcolate: {
         title: "Chipcolate",
